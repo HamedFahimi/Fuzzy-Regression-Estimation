@@ -5,11 +5,6 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import java.io.IOException;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class TT {
 
@@ -34,7 +29,7 @@ public class TT {
     private static float squareSumOfAllbestBeta_1sSoFar;
     private static float squareSumOfAllbestGamma_0sSoFar;
     private static float squareSumOfAllbestGamma_1sSoFar;
- public static final String directoryAsAString = "C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\";
+    public static final String directoryAsAString = "C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\";
     public static float centralAlpha_0Fixed;
     public static float centralAlpha_1Fixed;
     public static float centralAlpha_2Fixed;
@@ -75,18 +70,18 @@ public class TT {
             centralAlpha_3Fixed = 1f;
             centralAlpha_4Fixed = 1f;
             centralAlpha_5Fixed = 1f;
-            centralBeta_0Fixed = 0f;
+            centralBeta_0Fixed = 0.0f;
             centralBeta_1Fixed = 0.01f;
             centralBeta_2Fixed = 0.01f;
             centralBeta_3Fixed = 0.01f;
             centralBeta_4Fixed = 0.01f;
-            centralBeta_5Fixed = 1f;
-            centralGamma_0Fixed = 0f;
-            centralGamma_1Fixed = 0.01f;
-            centralGamma_2Fixed = 0.01f;
-            centralGamma_3Fixed = 0.01f;
-            centralGamma_4Fixed = 0.01f;
-            centralGamma_5Fixed = 1f;
+            centralBeta_5Fixed = 1.0f;
+            centralGamma_0Fixed = centralBeta_0Fixed;
+            centralGamma_1Fixed = centralBeta_1Fixed;
+            centralGamma_2Fixed = centralBeta_2Fixed;
+            centralGamma_3Fixed = centralBeta_3Fixed;
+            centralGamma_4Fixed = centralBeta_4Fixed;
+            centralGamma_5Fixed = centralBeta_5Fixed;
         }
         //    NUMBER_OF_All_EQUATIONS_In_THE_SYSTEM_TO_BE_SOLVED = Compute_nCr(NumberOfSamples, numberOfUnknownParameters);
 
@@ -116,14 +111,14 @@ public class TT {
         String dataName;
         writeOutTheContentsOfTheFirstRowOfTheReportFile();
 
-            for (int r = 0; r < numOfIterations; r++) {
-                //  dataName = "sampleData(n=20)-1" + ".xls";
-                //   dataName = CreateExcelDataFile.generateData(r);
-                dataName = "generatedData" + r + ".xls";
-                runAllExperiments(dataName, experimentNumber);
-                System.out.println("got rid of instance " + r);
-            }
-        
+        for (int r = 0; r < numOfIterations; r++) {
+            //  dataName = "sampleData(n=20)-1" + ".xls";
+            //   dataName = CreateExcelDataFile.generateData(r);
+            dataName = "generatedData" + r + ".xls";
+            runAllExperiments(dataName, experimentNumber);
+            System.out.println("got rid of instance " + r);
+        }
+
         writeOutTheContentsOfTheLastRowOfTheReportFile();
     }
 
@@ -183,7 +178,11 @@ public class TT {
         try {
             String filename = directoryAsAString + myString;
             desiredParametersToReport desiredResult = null;
-            X.developTheMatrixOfData(dataName, experimentNumber);
+            if (experimentNumber == 1) {
+                X.developTheMatrixOfData(dataName, experimentNumber);
+            } else {
+                X.developTheMatrixOfData3(dataName);
+            }
             boolean sortWithInsertionsort = false;
             HSSFRow row = sheet.createRow((short) counter++);
             int indexOfRightvestorInDataFile = 2;
@@ -212,12 +211,13 @@ public class TT {
 
     public static void createNewColumnsOfExcelOutputFile(int experimentNumber, int numberOfUnknownParameters, int whichParameter, initializeRequiredVectors X, boolean sortWithInsertionsort, desiredParametersToReport desiredResult, HSSFRow row, int dimensionOfRightvestorInDataFile) {
         X.solveAllEquationsAndSetup(experimentNumber, numberOfUnknownParameters, whichParameter, dimensionOfRightvestorInDataFile);
-        if ((experimentNumber == 1 && dimensionOfRightvestorInDataFile > numberOfUnknownParameters + 1) ||
-               (experimentNumber == 2 && dimensionOfRightvestorInDataFile > numberOfUnknownParameters) )
-                 {
+        if ((experimentNumber == 1 && dimensionOfRightvestorInDataFile > numberOfUnknownParameters + 1)
+                || (experimentNumber == 2 && dimensionOfRightvestorInDataFile > numberOfUnknownParameters)) {
             //dimensionOfRightvestorInDataFile = numberOfUnknownParameters;
             //    X.tmpi(numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
-            X.findGlobalMinimumOOptimized(experimentNumber);
+         //   X.findGlobalMinimumOOptimized(experimentNumber);
+            X.findGlobalMinimumOOptimized2();
+
         }
         if (experimentNumber == 1) {
             desiredResult = X.findBestParameters(experimentNumber, numberOfUnknownParameters, sortWithInsertionsort, whichParameter);
@@ -370,8 +370,7 @@ public class TT {
         double[] columnSumSquares = new double[6];
 
         String filename = "OptimizationResults.csv";
-        try (java.io.FileWriter fw = new java.io.FileWriter(filename);
-                java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+        try (java.io.FileWriter fw = new java.io.FileWriter(filename); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
 
             // Column Headers
             pw.println("alpha0,alpha1,beta0,beta1,gamma0,gamma1");

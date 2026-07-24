@@ -58,7 +58,7 @@ public class CreateDataInExcelFile5Parameters {
         Beta_is[2] = 0.01f;
         Beta_is[3] = 0.01f;
         Beta_is[4] = 0.01f;
-        Beta_is[5] = 1f;
+        Beta_is[5] = 1.0f;
 //        for (int r = 0; r < numberOfKnownParameters; r++) {
 //            Gamma_is[r] = Beta_is[r];
 //        }

@@ -113,6 +113,8 @@ public class initializeRequiredVectors {
     float[][] tableOfGamma_1sMultipliedInX_is;
     static float maintainedSumOfAllComputedErrorTerms;
 
+    // Add this list at the class level (above your method) to track results in memory
+//private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
     //the name of this method looks inconvenient. Later change it to something like initializeExperiment ...
     public initializeRequiredVectors(int n, int numberOfKnownParameters, int experimentNumber) {
         numberOfSamples = n;
@@ -122,9 +124,9 @@ public class initializeRequiredVectors {
             centralAlphas = new float[numberOfKnownParameters];
             centralBetas = new float[numberOfKnownParameters];
             centralGammas = new float[numberOfKnownParameters];
-            centralAlphas[0] = 10f;
-            centralAlphas[1] = 3f;
-            centralBetas[0] = -15f;
+            centralAlphas[0] = 10.0f;
+            centralAlphas[1] = 3.0f;
+            centralBetas[0] = -15.0f;
             centralBetas[1] = 0.1f;
             centralGammas[0] = -40f;
             centralGammas[1] = 0.2f;
@@ -136,18 +138,18 @@ public class initializeRequiredVectors {
             centralAlphas = new float[numberOfKnownParameters];
             centralBetas = new float[numberOfKnownParameters];
             centralGammas = new float[numberOfKnownParameters];
-            centralAlphas[0] = 1f;
-            centralAlphas[1] = 1f;
-            centralAlphas[2] = 1f;
-            centralAlphas[3] = 1f;
-            centralAlphas[4] = 1f;
-            centralAlphas[5] = 1f;
-            centralBetas[0] = 0f;
+            centralAlphas[0] = 1.0f;
+            centralAlphas[1] = 1.0f;
+            centralAlphas[2] = 1.0f;
+            centralAlphas[3] = 1.0f;
+            centralAlphas[4] = 1.0f;
+            centralAlphas[5] = 1.0f;
+            centralBetas[0] = 0.0f;
             centralBetas[1] = 0.1f;
             centralBetas[2] = 0.1f;
             centralBetas[3] = 0.1f;
             centralBetas[4] = 0.1f;
-            centralBetas[5] = 1f;
+            centralBetas[5] = 1.0f;
         }
         //    NanDetected = false;
         errorTerm = new float[n];
@@ -250,267 +252,105 @@ public class initializeRequiredVectors {
         }
     }
 
-    public float[][] developTheMatrixOfData2(String dataName) throws FileNotFoundException, IOException {
-        int i;
-        for (i = 0; i < numberOfSamples; i++) {
-            matrixOfData[i][0] = 1.0f;
-        }
-        i = 0;
-        int j = 0;
-        FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
-        HSSFWorkbook wb = new HSSFWorkbook(fis);
+public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters) throws FileNotFoundException, IOException {
+    int rowIndex = 0;
+    int totalExcelColumns = 0;
+    
+    // First, determine total columns in Excel file
+    try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
+         HSSFWorkbook wb = new HSSFWorkbook(fis)) {
+        
         HSSFSheet sheet = wb.getSheetAt(0);
+        Row firstRow = sheet.getRow(0);
+        totalExcelColumns = firstRow.getLastCellNum();
+    }
+    
+    // Determine how many columns to read from Excel (EXCLUDING column 0)
+    int dataColumnsToRead;
+    if (numberOfParameters == 2) {
+        // Excel has 5 columns total: col0=1s, col1-4=data
+        // Read ALL data columns: col1, col2, col3, col4 (4 columns)
+        dataColumnsToRead = totalExcelColumns - 1; // = 4
+    } else if (numberOfParameters == 6) {
+        // Excel has 9 columns total: col0=1s, col1-8=data (col8 is duplicate)
+        // Read data columns: col1 through col7 (7 columns), skip col8
+        dataColumnsToRead = totalExcelColumns - 2; // = 7 (skip col0 and col8)
+    } else {
+        // Default: skip column 0 and last column
+        dataColumnsToRead = totalExcelColumns - 2;
+    }
+    
+    // Initialize matrix: column 0 = 1s, then data columns
+    matrixOfData = new float[numberOfSamples][1 + dataColumnsToRead];
+    
+    // Initialize first column with 1.0f for all rows
+    for (rowIndex = 0; rowIndex < numberOfSamples; rowIndex++) {
+        matrixOfData[rowIndex][0] = 1.0f;
+    }
+    
+    // Reset row index for reading Excel
+    rowIndex = 0;
+    
+    try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
+         HSSFWorkbook wb = new HSSFWorkbook(fis)) {
+        
+        HSSFSheet sheet = wb.getSheetAt(0);
+        
         for (Row row : sheet) {
-            j = 1;
-            for (Cell cell : row) {
-                switch (j) {
-                    case 1:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 2:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 3:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 4:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 5:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 6:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 7:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
-                    case 8:
-                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                        break;
+            // Read from Excel column 1 onwards (skip column 0 which has 1s)
+            for (int excelCol = 1; excelCol <= dataColumnsToRead; excelCol++) {
+                Cell cell = row.getCell(excelCol);
+                if (cell != null) {
+                    // Matrix column = excelCol (since column 0 is the "1" constant)
+                    matrixOfData[rowIndex][excelCol] = truncate((float) cell.getNumericCellValue(), 2);
                 }
-                j++;
             }
-            i++;
+            
+            rowIndex++;
+            if (rowIndex >= numberOfSamples) break;
         }
-        return matrixOfData;
+    }
+    
+    return matrixOfData;
+}
+
+    public void developTheMatrixOfData3(String dataName) throws FileNotFoundException, IOException {
+        int rowIndex = 0;
+
+        try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
+
+            HSSFSheet sheet = wb.getSheetAt(0);
+
+            for (Row row : sheet) {
+                // Set first column to 1
+                matrixOfData[rowIndex][0] = 1.0f;
+
+                // Get total columns in Excel row
+                int totalColumns = row.getLastCellNum();
+
+                // Read from column 1 (Excel column 0) up to totalColumns-2 (skip last)
+                for (int excelCol = 0; excelCol < totalColumns - 1; excelCol++) {
+                    Cell cell = row.getCell(excelCol);
+                    if (cell != null) {
+                        // Matrix column = excelCol + 1 (because matrix[0] is the "1" column)
+                        matrixOfData[rowIndex][excelCol + 1] = truncate((float) cell.getNumericCellValue(), 2);
+                    }
+                }
+
+                rowIndex++;
+                if (rowIndex >= numberOfSamples) {
+                    break;
+                }
+            }
+        }
+
+        //   return matrixOfData;
     }
 
     public void solveAllEquationsAndSetup(int experimentNumber, int numberOfUnknownParameters, int whichPar, int dimensionOfRightvestorInDataFile) {
-        List<float[]> allOneOfAlphaOrBetaOrGammaSolutions = establishTheSystemOfEquationsAndSolve(experimentNumber, numberOfUnknownParameters, whichPar, dimensionOfRightvestorInDataFile);
+        List<float[]> allOneOfAlphaOrBetaOrGammaSolutions = establishTheSystemOfEquationsAndSolve(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
+    //    List<List<Float>> allOneOfAlphaOrBetaOrGammaSolutions2 = establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
         organizeAllSolutionsInASortedList(experimentNumber, numberOfUnknownParameters, allOneOfAlphaOrBetaOrGammaSolutions, dimensionOfRightvestorInDataFile);
-
-        /*
-        while (true) {
-
-            float sum = 0;
-
-            // ==========================================
-            // ALPHAS
-            // ==========================================
-            for (int i = 0; i < x; i++) {
-
-                sum
-                        += alphas
-                                .get(i)
-                                .get(indices[i]);
-
-            }
-
-            // ==========================================
-            // BETAS
-            // ==========================================
-            for (int i = 0; i < x; i++) {
-
-                sum
-                        += betas
-                                .get(i)
-                                .get(indices[x + i]);
-            }
-
-            // ==========================================
-            // CURRENT COMBINATION
-            // =======================================
-             ==
-                    = System.out.println(
-                            "indices = "
-                            + Arrays.toString(indices)
-                            + "   sum = "
-                            + sum
-                    );
-
-            // ==========================================
-            // NEXT COMBINATION
-            // ==========================================
-            int pos = totalLists - 1;
-
-            while (pos >= 0) {
-
-                int size;
-
-                // alpha lists
-                if (pos < x) {
-
-                    size
-                            = alphas
-                                    .get(pos)
-                                    .size();
-                } // beta lists
-                else {
-
-                    size
-                            = betas
-                                    .get(pos - x)
-                                    .size();
-                }
-
-                indices[pos]++;
-
-                if (indices[pos] < size) {
-                    break;
-                }
-
-                indices[pos] = 0;
-
-                pos--;
-            }
-
-            // all combinations completed
-            if (pos < 0) {
-                break;
-            }
-        }
-         */
-        //    int i = 0;
-        //    int j = 0;
-        /*
-        if (experimentNumber == 2) {
-            parameter_2 = new ArrayList<>();
-            parameter_3 = new ArrayList<>();
-            parameter_4 = new ArrayList<>();
-            parameter_5 = new ArrayList<>();
-            int k = 0, l = 0, m = 0, o = 0;
-            do {
-                while (i < n - 5) {
-                    j = i + 1;
-                    while (j < n - 4) {
-                        k = j + 1;
-                        while (k < n - 3) {
-                            l = k + 1;
-                            while (l < n - 2) {
-                                m = l + 1;
-                                while (m < n - 1) {
-                                    o = m + 1;
-                                    while (o < n) {
-                                        switch (whichPar) {
-                                            case 1:
-                                                determinerOfRightComponentOfFuzzyNumber[0] = matrixOfData[i][6];
-                                                determinerOfRightComponentOfFuzzyNumber[1] = matrixOfData[j][6];
-                                                determinerOfRightComponentOfFuzzyNumber[2] = matrixOfData[k][6];
-                                                determinerOfRightComponentOfFuzzyNumber[3] = matrixOfData[l][6];
-                                                determinerOfRightComponentOfFuzzyNumber[4] = matrixOfData[m][6];
-                                                determinerOfRightComponentOfFuzzyNumber[5] = matrixOfData[o][6];
-                                                break;
-                                            case 2:
-                                                determinerOfRightComponentOfFuzzyNumber[0] = matrixOfData[i][7];
-                                                determinerOfRightComponentOfFuzzyNumber[1] = matrixOfData[j][7];
-                                                determinerOfRightComponentOfFuzzyNumber[2] = matrixOfData[k][7];
-                                                determinerOfRightComponentOfFuzzyNumber[3] = matrixOfData[l][7];
-                                                determinerOfRightComponentOfFuzzyNumber[4] = matrixOfData[m][7];
-                                                determinerOfRightComponentOfFuzzyNumber[5] = matrixOfData[o][7];
-                                                break;
-                                            case 3:
-                                                determinerOfRightComponentOfFuzzyNumber[0] = matrixOfData[i][8];
-                                                determinerOfRightComponentOfFuzzyNumber[1] = matrixOfData[j][8];
-                                                determinerOfRightComponentOfFuzzyNumber[2] = matrixOfData[k][8];
-                                                determinerOfRightComponentOfFuzzyNumber[3] = matrixOfData[l][8];
-                                                determinerOfRightComponentOfFuzzyNumber[4] = matrixOfData[m][8];
-                                                determinerOfRightComponentOfFuzzyNumber[5] = matrixOfData[o][8];
-                                                break;
-                                            default:
-                                                break;
-                                        }
-                                        double[] solu = null;
-                                        double[][] Adata1 = new double[numberOfUnknownParameters][numberOfUnknownParameters];
-                                        int whichIndex = i;
-                                        for (int v1 = 0; v1 < numberOfUnknownParameters; v1++) {
-                                            switch (v1) {
-                                                case 1:
-                                                    whichIndex = j;
-                                                    break;
-                                                case 2:
-                                                    whichIndex = k;
-                                                    break;
-                                                case 3:
-                                                    whichIndex = l;
-                                                    break;
-                                                case 4:
-                                                    whichIndex = m;
-                                                    break;
-                                                case 5:
-                                                    whichIndex = o;
-                                                    break;
-                                                default:
-                                                    break;
-                                            }
-                                            for (int v2 = 0; v2 < numberOfUnknownParameters; v2++) {
-                                                Adata1[v1][v2] = matrixOfData[whichIndex][v2];
-                                            }
-                                        }
-                                        double[] bdata1 = new double[numberOfUnknownParameters];
-                                        for (int y = 0; y < numberOfUnknownParameters; y++) {
-                                            bdata1[y] = determinerOfRightComponentOfFuzzyNumber[y];
-                                        }
-                                        if (!MatrixUtils.isSingular(Adata1)) {
-                                            solu = solveTheSystem(Adata1, bdata1);
-                                            result = new float[solu.length];
-                                            for (int w = 0; w < solu.length; w++) {
-                                                result[w] = (float) solu[w]; //we have a damn casting here that must be avoided later
-                                            }
-                                        }
-                                        parameter_0.add(result[0]);
-                                        parameter_1.add(result[1]);
-                                        parameter_2.add(result[2]);
-                                        parameter_3.add(result[3]);
-                                        parameter_4.add(result[4]);
-                                        parameter_5.add(result[5]);
-                                        for (int parameter = 0; parameter < numberOfUnknownParameters; parameter++) {
-                                            //    vectors.get(parameter).add(solu[parameter]);
-                                            all_parameters[parameter][counter] = solu[parameter];
-                                        }
-                                        counter++;
-                                        o++;
-                                    }
-                                    m++;
-                                }
-                                l++;
-                            }
-                            k++;
-                        }
-                        j++;
-                    }
-                    i++;
-                }
-            } while (i < n - 5
-                    && j < n - 4
-                    && k < n - 3
-                    && l < n - 2
-                    && m < n - 1
-                    && o < n
-                    && counter < number_of_all_mutual_equations);
-            for (int parameter = 0; parameter < numberOfUnknownParameters; parameter++) {
-                Arrays.sort(all_parameters[parameter]);
-            }
-            //later check here if ever we get duplicates and even so, whether it is worth using an ArrayList instead
-            Collections.sort(parameter_0);
-            //        Collections.sort(vectors.get(0));
-            Collections.sort(parameter_1);
-            Collections.sort(parameter_2);
-            Collections.sort(parameter_3);
-            Collections.sort(parameter_4);
-            Collections.sort(parameter_5);
-        }
-         */
     }
 
     public void findGlobalMinimumOOptimized(int experimentNumber) {
@@ -667,8 +507,202 @@ public class initializeRequiredVectors {
                 double[] columnSumSquaredDeviations = new double[totalParams];
 
                 // Overwrite old file execution completely
-                try (java.io.FileWriter fw = new java.io.FileWriter(file, false);
-                        java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+                try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+
+                    // Row 1: Generate Dynamic CSV Labels
+                    StringBuilder sbHeaders = new StringBuilder();
+                    for (int j = 0; j < K; j++) {
+                        sbHeaders.append("alpha").append(j).append(",");
+                    }
+                    for (int j = 0; j < K; j++) {
+                        sbHeaders.append("beta").append(j).append(",");
+                    }
+                    for (int j = 0; j < K; j++) {
+                        sbHeaders.append("gamma").append(j);
+                        if (j < K - 1) {
+                            sbHeaders.append(",");
+                        }
+                    }
+                    pw.println(sbHeaders.toString());
+
+                    // Rows 2 to 11: The exact 10 data rows from memory
+                    for (float[] rowParams : allFileResults) {
+                        for (int col = 0; col < totalParams; col++) {
+                            pw.printf("%f", rowParams[col]);
+                            if (col < totalParams - 1) {
+                                pw.print(",");
+                            }
+
+                            double val = rowParams[col];
+                            columnSums[col] += val;
+
+                            // Deviation calculation using unique individual parameter centers
+                            double deviation = val - centralBaselines[col];
+                            columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                        }
+                        pw.println();
+                    }
+
+                    // Row 12: Blank row spacer matching cell width dynamically
+                    for (int col = 0; col < totalParams - 1; col++) {
+                        pw.print(",");
+                    }
+                    pw.println();
+
+                    // Row 13: Pure numeric Averages
+                    for (int col = 0; col < totalParams; col++) {
+                        pw.print(col == 0 ? String.format("%f", columnSums[col] / 10)
+                                : String.format(",%f", columnSums[col] / 10));
+                    }
+                    pw.println();
+
+                    // Row 14: Pure numeric Squared Deviations from unique baselines
+                    for (int col = 0; col < totalParams; col++) {
+                        double msd = columnSumSquaredDeviations[col] / 10;
+                        pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
+                    }
+                    pw.println();
+
+                    System.out.println("Excel file successfully created fresh with exactly 14 rows.");
+
+                    // Clear the cache for clean resets next time main runs
+                    allFileResults.clear();
+
+                } catch (java.io.IOException e) {
+                    System.err.println("Error writing out final dynamic Excel spreadsheet matrix.");
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            System.out.println("No valid solution found matching window constraint.");
+        }
+    }
+
+    public void findGlobalMinimumOOptimized2() {
+        int N = matrixOfData.length;
+        if (N == 0) {
+            return;
+        }
+
+        int M = matrixOfData[0].length;
+        int numX = M - 3; // K parameters per group
+
+        int h1Max = N / 4;
+        int h2Start = (3 * N) / 4;
+        int minWindowSize = N / 2;
+
+        double globalMinO = Double.MAX_VALUE;
+        int bestH1 = -1, bestH2 = -1, bestSolIdx = -1;
+
+        int numSolutions = alphaSortedParameters.get(0).size();
+
+        float[] currentAlphas = new float[numX];
+        float[] currentBetas = new float[numX];
+        float[] currentGammas = new float[numX];
+
+        for (int s = 0; s < numSolutions; s++) {
+            for (int j = 0; j < numX; j++) {
+                currentAlphas[j] = alphaSortedParameters.get(j).get(s);
+                currentBetas[j] = betaSortedParameters.get(j).get(s);
+                currentGammas[j] = gammaSortedParameters.get(j).get(s);
+            }
+
+            double[] E = new double[N];
+            double[] prefixSum = new double[N + 1];
+            prefixSum[0] = 0;
+
+            for (int i = 0; i < N; i++) {
+                float sumAlphaX = 0, sumBetaX = 0, sumGammaX = 0;
+                float[] row = matrixOfData[i];
+
+                for (int j = 0; j < numX; j++) {
+                    float xVal = row[j];
+                    sumAlphaX += currentAlphas[j] * xVal;
+                    sumBetaX += currentBetas[j] * xVal;
+                    sumGammaX += currentGammas[j] * xVal;
+                }
+
+                // M-3 is Y, M-2 is L, M-1 is R
+                E[i] = Math.abs(row[M - 3] - sumAlphaX)
+                        + 0.5 * Math.abs(row[M - 2] - sumBetaX)
+                        + 0.5 * Math.abs(row[M - 1] - sumGammaX);
+
+                prefixSum[i + 1] = prefixSum[i] + E[i];
+            }
+
+            double totalSumE = prefixSum[N];
+            if (totalSumE < 1e-12) {
+                continue;
+            }
+
+            for (int h1 = 0; h1 < h1Max; h1++) {
+                for (int h2 = h2Start - 1; h2 < N; h2++) {
+                    int currentWindowSize = h2 - h1 + 1;
+                    if (currentWindowSize < minWindowSize) {
+                        continue;
+                    }
+
+                    double numerator = prefixSum[h2 + 1] - prefixSum[h1];
+                    double currentO = numerator / totalSumE;
+
+                    if (currentO < globalMinO) {
+                        globalMinO = currentO;
+                        bestH1 = h1;
+                        bestH2 = h2;
+                        bestSolIdx = s;
+                    }
+                }
+            }
+        }
+
+        // =========================================================================
+        // MEMORY-COLLECTOR & SINGLE-SHOT DYNAMIC WRITE ACTION
+        // =========================================================================
+        if (bestSolIdx != -1) {
+            int K = numX; // Dynamic number of parameters per group
+            int totalParams = 3 * K;
+
+            // Extract all dynamic winning parameters into one row array
+            float[] currentResult = new float[totalParams];
+            int pIdx = 0;
+
+            for (int j = 0; j < K; j++) {
+                currentResult[pIdx++] = alphaSortedParameters.get(j).get(bestSolIdx);
+            }
+            for (int j = 0; j < K; j++) {
+                currentResult[pIdx++] = betaSortedParameters.get(j).get(bestSolIdx);
+            }
+            for (int j = 0; j < K; j++) {
+                currentResult[pIdx++] = gammaSortedParameters.get(j).get(bestSolIdx);
+            }
+
+            // Save row to memory list
+            allFileResults.add(currentResult);
+
+            // Process file generation on the 10th result load
+            if (allFileResults.size() == 10) {
+                String filename = "OptimizationResults.csv";
+                java.io.File file = new java.io.File(filename);
+
+                // Stitch together your pre-determined, unique baseline lists
+                double[] centralBaselines = new double[totalParams];
+                int bIdx = 0;
+
+                for (int j = 0; j < K; j++) {
+                    centralBaselines[bIdx++] = centralAlphas[j]; // Match to alpha0, alpha1...
+                }
+                for (int j = 0; j < K; j++) {
+                    centralBaselines[bIdx++] = centralBetas[j];  // Match to beta0, beta1...
+                }
+                for (int j = 0; j < K; j++) {
+                    centralBaselines[bIdx++] = centralGammas[j]; // Match to gamma0, gamma1...
+                }
+
+                double[] columnSums = new double[totalParams];
+                double[] columnSumSquaredDeviations = new double[totalParams];
+
+                // Overwrite old file execution completely
+                try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
 
                     // Row 1: Generate Dynamic CSV Labels
                     StringBuilder sbHeaders = new StringBuilder();
@@ -747,8 +781,7 @@ public class initializeRequiredVectors {
         boolean fileExists = file.exists();
 
         // Passing 'true' as the second argument enables APPEND MODE
-        try (FileWriter fw = new FileWriter(file, true);
-                PrintWriter pw = new PrintWriter(fw)) {
+        try (FileWriter fw = new FileWriter(file, true); PrintWriter pw = new PrintWriter(fw)) {
 
             // Step 1: Only write the headers if this is a brand new file
             if (!fileExists) {
@@ -1718,6 +1751,114 @@ public class initializeRequiredVectors {
 //        solveAllEquationsAndSetup(1, 2, whichParameter);
 //
 //    }
+    public List<List<Float>> establishTheSystemOfEquationsAndSolve20(int experimentNumber, int numberOfUnknownParameters, int dimensionOfRightvestorInDataFile) {
+
+        // =====================================================
+        // ONE-SHOT CONFIGURATION: INITIALIZE TARGET PARAMETER TRACKS
+        // =====================================================
+        // This replaces 'allOneOfAlphaOrBetaOrGammaSolutions'. 
+        // It creates a row container for each individual parameter group.
+        List<List<Float>> sortedParameters = new ArrayList<>(numberOfUnknownParameters);
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            sortedParameters.add(new ArrayList<>());
+        }
+
+        // =====================================================
+        // INITIAL COMBINATION & TRACKING CACHE
+        // =====================================================
+        int[] comb = new int[numberOfUnknownParameters];
+        int[] lastUsedRowIndex = new int[numberOfUnknownParameters];
+
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            comb[i] = i;
+            lastUsedRowIndex[i] = -1;
+        }
+
+        // =====================================================
+        // PERSISTENT SYSTEM MATRICES (DOUBLE-BASED AS ORIGINAL)
+        // =====================================================
+        double[][] A = new double[numberOfUnknownParameters][numberOfUnknownParameters];
+        double[] B = new double[numberOfUnknownParameters];
+        float[] solution;
+
+        // OPTIMIZATION: Set the first column entries to 1.0 EXACTLY ONCE
+        for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
+            A[eq][0] = 1.0;
+        }
+
+        while (true) {
+
+            // =================================================
+            // BUILD A AND B (WITH FIRST COLUMN SKIP & DELTA CHECKS)
+            // =================================================
+            for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
+                int rowIndex = comb[eq];
+
+                // If this row slot hasn't changed, skip entirely
+                if (rowIndex == lastUsedRowIndex[eq]) {
+                    continue;
+                }
+
+                float[] sourceRow = matrixOfData[rowIndex];
+
+                // OPTIMIZATION: Skip column 0 entirely! 
+                for (int var = 1; var < numberOfUnknownParameters; var++) {
+                    A[eq][var] = (double) sourceRow[var];
+                }
+
+                // Fill Right Hand Side vector
+                B[eq] = (double) sourceRow[dimensionOfRightvestorInDataFile];
+
+                // Mark this slot as updated
+                lastUsedRowIndex[eq] = rowIndex;
+            }
+
+            // =================================================
+            // SOLVE SYSTEM & DIRECT DEPOSITION
+            // =================================================
+            if (!MatrixUtils.isSingular(A)) {
+                solution = solveTheSystem(A, B);
+
+                // ONE-SHOT VERTICAL DEPOSITION:
+                // Distribute parameter elements straight into their target tracks.
+                // Completely bypasses temporary horizontal float[] array allocations.
+                for (int p = 0; p < numberOfUnknownParameters; p++) {
+                    sortedParameters.get(p).add(solution[p]);
+                }
+            }
+
+            // =================================================
+            // NEXT COMBINATION (Lexicographical Generator)
+            // =================================================
+            int pos = numberOfUnknownParameters - 1;
+
+            while (pos >= 0 && comb[pos] == numberOfSamples - numberOfUnknownParameters + pos) {
+                pos--;
+            }
+
+            if (pos < 0) {
+                break;
+            }
+
+            comb[pos]++;
+
+            for (int i = pos + 1; i < numberOfUnknownParameters; i++) {
+                comb[i] = comb[i - 1] + 1;
+            }
+        }
+
+        // =====================================================
+        // NATIVE IN-PLACE SORTING BEFORE RETURN
+        // =====================================================
+        // Sort each parameter track cleanly using high-speed native Timsort loops
+        for (int p = 0; p < numberOfUnknownParameters; p++) {
+            java.util.Collections.sort(sortedParameters.get(p));
+        }
+
+        // Returns the fully isolated, fully sorted lists directly
+        return sortedParameters;
+    }
+
     public static float[] solveTheSystem(double[][] Adata, double[] bdata) {
         RealMatrix A = new Array2DRowRealMatrix(Adata);
         RealVector b = new ArrayRealVector(bdata);
@@ -1773,7 +1914,7 @@ public class initializeRequiredVectors {
         return false; // Not singular
     }
 
-    public static List<float[]> establishTheSystemOfEquationsAndSolve(int experimentNumber, int numberOfUnknownParameters, int whichPar, int dimensionOfRightvestorInDataFile) {
+    public static List<float[]> establishTheSystemOfEquationsAndSolve(int experimentNumber, int numberOfUnknownParameters, int dimensionOfRightvestorInDataFile) {
         // =====================================================
         // STORE ALL SOLUTIONS
         // =====================================================
@@ -1850,6 +1991,147 @@ public class initializeRequiredVectors {
         }
         return allOneOfAlphaOrBetaOrGammaSolutions;
 
+    }
+
+    public static void establishTheSystemOfEquationsAndSolve2(int experimentNumber, int numberOfUnknownParameters, int dimensionOfRightvestorInDataFile) {
+
+        // =====================================================
+        // ONE-SHOT CONFIGURATION: INITIALIZE TARGET PARAMETER TRACKS
+        // =====================================================
+        // This replaces 'allOneOfAlphaOrBetaOrGammaSolutions'. 
+        // It creates a row container for each individual parameter group.
+        List<List<Float>> sortedParameters = new ArrayList<>(numberOfUnknownParameters);
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            sortedParameters.add(new ArrayList<>());
+        }
+
+        // =====================================================
+        // INITIAL COMBINATION & TRACKING CACHE
+        // =====================================================
+        int[] comb = new int[numberOfUnknownParameters];
+        int[] lastUsedRowIndex = new int[numberOfUnknownParameters];
+
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            comb[i] = i;
+            lastUsedRowIndex[i] = -1;
+        }
+
+        // =====================================================
+        // PERSISTENT SYSTEM MATRICES (DOUBLE-BASED AS ORIGINAL)
+        // =====================================================
+        double[][] A = new double[numberOfUnknownParameters][numberOfUnknownParameters];
+        double[] B = new double[numberOfUnknownParameters];
+        float[] solution;
+
+        // OPTIMIZATION: Set the first column entries to 1.0 EXACTLY ONCE
+        for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
+            A[eq][0] = 1.0;
+        }
+
+        while (true) {
+
+            // =================================================
+            // BUILD A AND B (WITH FIRST COLUMN SKIP & DELTA CHECKS)
+            // =================================================
+            for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
+                int rowIndex = comb[eq];
+
+                // If this row slot hasn't changed, skip entirely
+                if (rowIndex == lastUsedRowIndex[eq]) {
+                    continue;
+                }
+
+                float[] sourceRow = matrixOfData[rowIndex];
+
+                // OPTIMIZATION: Skip column 0 entirely! 
+                for (int var = 1; var < numberOfUnknownParameters; var++) {
+                    A[eq][var] = (double) sourceRow[var];
+                }
+
+                // Fill Right Hand Side vector
+                B[eq] = (double) sourceRow[dimensionOfRightvestorInDataFile];
+
+                // Mark this slot as updated
+                lastUsedRowIndex[eq] = rowIndex;
+            }
+
+            // =================================================
+            // SOLVE SYSTEM & DIRECT DEPOSITION
+            // =================================================
+            if (!MatrixUtils.isSingular(A)) {
+                solution = solveTheSystem(A, B);
+
+                // ONE-SHOT VERTICAL DEPOSITION:
+                // Distribute parameter elements straight into their target tracks.
+                // Completely bypasses temporary horizontal float[] array allocations.
+                for (int p = 0; p < numberOfUnknownParameters; p++) {
+                    sortedParameters.get(p).add(solution[p]);
+                }
+            }
+
+            // =================================================
+            // NEXT COMBINATION (Lexicographical Generator)
+            // =================================================
+            int pos = numberOfUnknownParameters - 1;
+
+            while (pos >= 0 && comb[pos] == numberOfSamples - numberOfUnknownParameters + pos) {
+                pos--;
+            }
+
+            if (pos < 0) {
+                break;
+            }
+
+            comb[pos]++;
+
+            for (int i = pos + 1; i < numberOfUnknownParameters; i++) {
+                comb[i] = comb[i - 1] + 1;
+            }
+        }
+
+        // =====================================================
+        // NATIVE IN-PLACE SORTING BEFORE RETURN
+        // =====================================================
+        // Sort each parameter track cleanly using high-speed native Timsort loops
+        for (int p = 0; p < numberOfUnknownParameters; p++) {
+            java.util.Collections.sort(sortedParameters.get(p));
+        }
+
+        
+        
+                if (experimentNumber == 1) {
+            switch (dimensionOfRightvestorInDataFile) {
+                case 2:
+                    alphaSortedParameters = sortedParameters;
+                    break;
+                case 3:
+                    betaSortedParameters = sortedParameters;
+                    break;
+                case 4:
+                    gammaSortedParameters = sortedParameters;
+                    break;
+                default:
+                    break;
+            }
+        } else if (experimentNumber == 2) {
+            switch (dimensionOfRightvestorInDataFile) {
+                case 6:
+                    alphaSortedParameters = sortedParameters;
+                    break;
+                case 7:
+                    betaSortedParameters = sortedParameters;
+                    gammaSortedParameters = betaSortedParameters;
+                    break;
+                default:
+                    break;
+            }
+        }
+        
+        
+        
+        
+        // Returns the fully isolated, fully sorted lists directly
+    //    return sortedParameters;
     }
 
     public static void organizeAllSolutionsInASortedList(int experimentNumber, int numberOfUnknownParameters, List<float[]> allOneOfAlphaOrBetaOrGammaSolutions, int dimensionOfRightvestorInDataFile) {
