@@ -1,18 +1,7 @@
 package fuzzyregressionestimation;
 
-import java.io.IOException;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.List;
-import java.util.ArrayList;
-
-//import static fuzzyregressionestimation.runExperimentsOverNumerousData2Parameters.directoryAsAString;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -37,76 +26,22 @@ public class initializeRequiredVectors {
 
     // Keeps track of the 10 rows in memory so we never have to append to a file
     private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
-
     private static float[] centralAlphas;
     private static float[] centralBetas;
     private static float[] centralGammas;
-
-//    private static float[] centralAlphas = {1f, 1f, 1f, 1f,1f, 1f};
-//    private static float[] centralBetas = {0f, 0.1f, 0.1f, 0.1f,0.1f, 1f};
-//    private static float[] centralGammas = {0f, 0.1f, 0.1f, 0.1f,0.1f, 1f};
     private static final double EPS = 1e-10;
     private static int numberOfSamples;         //n = numberOfSamples
     private static int[] indices_of_samples_sorted_by_error;
     private static List<List<Float>> alphaSortedParameters;
     private static List<List<Float>> betaSortedParameters;
     private static List<List<Float>> gammaSortedParameters;
-    private static ArrayList<Float> alpha_2WithoutDuplicates;
-    private static ArrayList<Float> alpha_3WithoutDuplicates;
-    private static ArrayList<Float> alpha_4WithoutDuplicates;
-    private static ArrayList<Float> alpha_5WithoutDuplicates;
-    private static ArrayList<Float> beta_2WithoutDuplicates;
-    private static ArrayList<Float> beta_3WithoutDuplicates;
-    private static ArrayList<Float> beta_4WithoutDuplicates;
-    private static ArrayList<Float> beta_5WithoutDuplicates;
-    private static ArrayList<Float> gamma_2WithoutDuplicates;
-    private static ArrayList<Float> gamma_3WithoutDuplicates;
-    private static ArrayList<Float> gamma_4WithoutDuplicates;
-    private static ArrayList<Float> gamma_5WithoutDuplicates;
-    private static int sizeOfAlpha_2WithoutDuplicates;
-    private static int sizeOfAlpha_3WithoutDuplicates;
-    private static int sizeOfAlpha_4WithoutDuplicates;
-    private static int sizeOfAlpha_5WithoutDuplicates;
-    private static int sizeOfBeta_2WithoutDuplicates;
-    private static int sizeOfBeta_3WithoutDuplicates;
-    private static int sizeOfBeta_4WithoutDuplicates;
-    private static int sizeOfBeta_5WithoutDuplicates;
-    private static int sizeOfGamma_2WithoutDuplicates;
-    private static int sizeOfGamma_3WithoutDuplicates;
-    private static int sizeOfGamma_4WithoutDuplicates;
-    private static int sizeOfGamma_5WithoutDuplicates;
     private static float[] bestParam_iSoFar;
     private static float bestParam_0SoFar;
     private static float bestParam_1SoFar;
-    private static float bestParam_2SoFar;
-    private static float bestParam_3SoFar;
-    private static float bestParam_4SoFar;
-    private static float bestParam_5SoFar;
-    private static float[] bestAlpha_iSoFar;
-    private static float bestAlpha_0SoFar;
-    private static float bestAlpha_1SoFar;
-    private static float bestAlpha_2SoFar;
-    private static float bestAlpha_3SoFar;
-    private static float bestAlpha_4SoFar;
-    private static float bestAlpha_5SoFar;
-    private static float bestBeta_0SoFar;
-    private static float bestBeta_1SoFar;
-    private static float bestBeta_2SoFar;
-    private static float bestBeta_3SoFar;
-    private static float bestBeta_4SoFar;
-    private static float bestBeta_5SoFar;
-    private static float bestGamma_0SoFar;
-    private static float bestGamma_1SoFar;
-    private static float bestGamma_2SoFar;
-    private static float bestGamma_3SoFar;
-    private static float bestGamma_4SoFar;
-    private static float bestGamma_5SoFar;
-    private static float[] sumOfAllParamTimesX_jsSoFar;
     private static int sampleWithBesth_1SoFar;
     private static int sampleWithBesth_2SoFar;
     private static float bestValueOfObjectiveFoundSoFar;
     private static float[] errorTerm;
-    boolean[] signOfThisCorrespondingErrorTermIsNegative;
     static float[][] matrixOfData;
     float[][] tableOfAlpha_1sMultipliedInX_is;
     float[][] tableOfBeta_1sMultipliedInX_is;
@@ -118,7 +53,6 @@ public class initializeRequiredVectors {
     //the name of this method looks inconvenient. Later change it to something like initializeExperiment ...
     public initializeRequiredVectors(int n, int numberOfKnownParameters, int experimentNumber) {
         numberOfSamples = n;
-        sumOfAllParamTimesX_jsSoFar = new float[n];
         if (experimentNumber == 1) {
             matrixOfData = new float[n][numberOfKnownParameters];
             centralAlphas = new float[numberOfKnownParameters];
@@ -153,7 +87,6 @@ public class initializeRequiredVectors {
         }
         //    NanDetected = false;
         errorTerm = new float[n];
-        signOfThisCorrespondingErrorTermIsNegative = new boolean[n];
         indices_of_samples_sorted_by_error = new int[n];
     }
 
@@ -252,67 +185,67 @@ public class initializeRequiredVectors {
         }
     }
 
-public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters) throws FileNotFoundException, IOException {
-    int rowIndex = 0;
-    int totalExcelColumns = 0;
-    
-    // First, determine total columns in Excel file
-    try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
-         HSSFWorkbook wb = new HSSFWorkbook(fis)) {
-        
-        HSSFSheet sheet = wb.getSheetAt(0);
-        Row firstRow = sheet.getRow(0);
-        totalExcelColumns = firstRow.getLastCellNum();
-    }
-    
-    // Determine how many columns to read from Excel (EXCLUDING column 0)
-    int dataColumnsToRead;
-    if (numberOfParameters == 2) {
-        // Excel has 5 columns total: col0=1s, col1-4=data
-        // Read ALL data columns: col1, col2, col3, col4 (4 columns)
-        dataColumnsToRead = totalExcelColumns - 1; // = 4
-    } else if (numberOfParameters == 6) {
-        // Excel has 9 columns total: col0=1s, col1-8=data (col8 is duplicate)
-        // Read data columns: col1 through col7 (7 columns), skip col8
-        dataColumnsToRead = totalExcelColumns - 2; // = 7 (skip col0 and col8)
-    } else {
-        // Default: skip column 0 and last column
-        dataColumnsToRead = totalExcelColumns - 2;
-    }
-    
-    // Initialize matrix: column 0 = 1s, then data columns
-    matrixOfData = new float[numberOfSamples][1 + dataColumnsToRead];
-    
-    // Initialize first column with 1.0f for all rows
-    for (rowIndex = 0; rowIndex < numberOfSamples; rowIndex++) {
-        matrixOfData[rowIndex][0] = 1.0f;
-    }
-    
-    // Reset row index for reading Excel
-    rowIndex = 0;
-    
-    try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
-         HSSFWorkbook wb = new HSSFWorkbook(fis)) {
-        
-        HSSFSheet sheet = wb.getSheetAt(0);
-        
-        for (Row row : sheet) {
-            // Read from Excel column 1 onwards (skip column 0 which has 1s)
-            for (int excelCol = 1; excelCol <= dataColumnsToRead; excelCol++) {
-                Cell cell = row.getCell(excelCol);
-                if (cell != null) {
-                    // Matrix column = excelCol (since column 0 is the "1" constant)
-                    matrixOfData[rowIndex][excelCol] = truncate((float) cell.getNumericCellValue(), 2);
+    public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters) throws FileNotFoundException, IOException {
+        int rowIndex = 0;
+        int totalExcelColumns = 0;
+
+        // First, determine total columns in Excel file
+        try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
+
+            HSSFSheet sheet = wb.getSheetAt(0);
+            Row firstRow = sheet.getRow(0);
+            totalExcelColumns = firstRow.getLastCellNum();
+        }
+
+        // Determine how many columns to read from Excel (EXCLUDING column 0)
+        int dataColumnsToRead;
+        if (numberOfParameters == 2) {
+            // Excel has 5 columns total: col0=1s, col1-4=data
+            // Read ALL data columns: col1, col2, col3, col4 (4 columns)
+            dataColumnsToRead = totalExcelColumns - 1; // = 4
+        } else if (numberOfParameters == 6) {
+            // Excel has 9 columns total: col0=1s, col1-8=data (col8 is duplicate)
+            // Read data columns: col1 through col7 (7 columns), skip col8
+            dataColumnsToRead = totalExcelColumns - 2; // = 7 (skip col0 and col8)
+        } else {
+            // Default: skip column 0 and last column
+            dataColumnsToRead = totalExcelColumns - 2;
+        }
+
+        // Initialize matrix: column 0 = 1s, then data columns
+        matrixOfData = new float[numberOfSamples][1 + dataColumnsToRead];
+
+        // Initialize first column with 1.0f for all rows
+        for (rowIndex = 0; rowIndex < numberOfSamples; rowIndex++) {
+            matrixOfData[rowIndex][0] = 1.0f;
+        }
+
+        // Reset row index for reading Excel
+        rowIndex = 0;
+
+        try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
+
+            HSSFSheet sheet = wb.getSheetAt(0);
+
+            for (Row row : sheet) {
+                // Read from Excel column 1 onwards (skip column 0 which has 1s)
+                for (int excelCol = 1; excelCol <= dataColumnsToRead; excelCol++) {
+                    Cell cell = row.getCell(excelCol);
+                    if (cell != null) {
+                        // Matrix column = excelCol (since column 0 is the "1" constant)
+                        matrixOfData[rowIndex][excelCol] = truncate((float) cell.getNumericCellValue(), 2);
+                    }
+                }
+
+                rowIndex++;
+                if (rowIndex >= numberOfSamples) {
+                    break;
                 }
             }
-            
-            rowIndex++;
-            if (rowIndex >= numberOfSamples) break;
         }
+
+        return matrixOfData;
     }
-    
-    return matrixOfData;
-}
 
     public void developTheMatrixOfData3(String dataName) throws FileNotFoundException, IOException {
         int rowIndex = 0;
@@ -349,7 +282,7 @@ public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters
 
     public void solveAllEquationsAndSetup(int experimentNumber, int numberOfUnknownParameters, int whichPar, int dimensionOfRightvestorInDataFile) {
         List<float[]> allOneOfAlphaOrBetaOrGammaSolutions = establishTheSystemOfEquationsAndSolve(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
-    //    List<List<Float>> allOneOfAlphaOrBetaOrGammaSolutions2 = establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
+        //    List<List<Float>> allOneOfAlphaOrBetaOrGammaSolutions2 = establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
         organizeAllSolutionsInASortedList(experimentNumber, numberOfUnknownParameters, allOneOfAlphaOrBetaOrGammaSolutions, dimensionOfRightvestorInDataFile);
     }
 
@@ -578,15 +511,19 @@ public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters
         }
     }
 
-    public void findGlobalMinimumOOptimized2() {
+    public void findGlobalMinimumOOptimized2(int experimentNumber) {
         int N = matrixOfData.length;
         if (N == 0) {
             return;
         }
 
         int M = matrixOfData[0].length;
-        int numX = M - 3; // K parameters per group
-
+        int numX;
+        if (experimentNumber == 1) {
+            numX = M - 3; 
+        } else {
+            numX = M - 2;
+        }
         int h1Max = N / 4;
         int h2Start = (3 * N) / 4;
         int minWindowSize = N / 2;
@@ -1004,581 +941,6 @@ public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters
         }
     }
 
-    public desiredParametersToReport findBestParameters(int experimentNumber, int numberOfUnknownParameters, boolean sortWithInsertionsort, int whichPar) {
-        desiredParametersToReport desiredResult = new desiredParametersToReport();
-        desiredParametersToReport2 b = new desiredParametersToReport2(numberOfUnknownParameters);
-
-        //    int n = getNumberOfSamples();
-        bestValueOfObjectiveFoundSoFar = 1.0f;
-        sampleWithBesth_1SoFar = 0;
-        sampleWithBesth_2SoFar = numberOfSamples - 1;
-        int[] indices_of_samples_sorted_by_error1 = new int[numberOfSamples];
-        if (sortWithInsertionsort) {
-            fillIdenticalArray(indices_of_samples_sorted_by_error);
-        }
-        int iterator_over_alpha_0 = -1;
-        int iterator_over_alpha_1;
-        int iterator_over_beta_0 = -1;
-        int iterator_over_beta_1;
-        int iterator_over_gamma_0 = -1;
-        int iterator_over_gamma_1;
-        float fixed_parameter_0;
-        float fixed_parameter_1;
-        if (experimentNumber == 1) {
-            switch (whichPar) {
-                case 1:
-                    tableOfAlpha_1sMultipliedInX_is = new float[alphaSortedParameters.get(0).size()][numberOfSamples];
-                    float ithElementOfalpha_1WithoutDuplicates;
-                    for (int i = 0; i < alphaSortedParameters.get(1).size(); i++) {
-                        ithElementOfalpha_1WithoutDuplicates = alphaSortedParameters.get(1).get(i);
-                        for (int j = 0; j < numberOfSamples; j++) {
-                            //   tableOfParameter_1sMultipliedInX_is[i][j] = truncate(alpha_1WithoutDuplicates.get(i) * matrixOfData[j][1], 2);
-                            tableOfAlpha_1sMultipliedInX_is[i][j] = ithElementOfalpha_1WithoutDuplicates * matrixOfData[j][1];
-                        }
-                    }
-                    //    bestAlpha_0SoFar = parameter_0.get(0);
-                    bestAlpha_0SoFar = alphaSortedParameters.get(0).get(0);
-                    //  bestAlpha_1SoFar = parameter_1.get(0);
-                    bestAlpha_1SoFar = alphaSortedParameters.get(1).get(0);
-                    do {
-//    System.out.println("iterator_over_parameter_0 = " + iterator_over_parameter_0);
-                        for (int w = 0; w < numberOfSamples; w++) {
-                            errorTerm[w] = matrixOfData[w][2];
-                        }
-                        maintainedSumOfAllComputedErrorTerms = 0;
-                        iterator_over_alpha_0 += 1;
-                        fixed_parameter_0 = alphaSortedParameters.get(0).get(iterator_over_alpha_0);
-                        System.out.println("fixed_parameter_0 = " + fixed_parameter_0);
-                        iterator_over_alpha_1 = -1;
-                        addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                        do {
-                            //    System.out.println("iterator_over_parameter_1 = " + iterator_over_parameter_1);
-                            iterator_over_alpha_1 += 1;
-
-                            fixed_parameter_1 = alphaSortedParameters.get(1).get(iterator_over_alpha_1);
-                            //   System.out.print("\nfixed_parameter_1 " + fixed_parameter_1);
-                            //    System.out.print("\n");
-                            addParameter_1TermToTheErrorTerm(iterator_over_alpha_1, fixed_parameter_1, tableOfAlpha_1sMultipliedInX_is);
-                            //    if (!solveOverLeftCenter && solveOverCenter && !solveOverRightCenter) {
-                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                            //   }
-
-                            substractParameter_1TermFromTheErrorTerm(iterator_over_alpha_1, fixed_parameter_1, tableOfAlpha_1sMultipliedInX_is);
-                        } while (iterator_over_alpha_1 < alphaSortedParameters.get(1).size() - 1);
-                    } while (iterator_over_alpha_0 < alphaSortedParameters.get(0).size() - 1);
-                    //  desiredResult[0] = bestParam_0SoFar;
-                    //     desiredResult[1] = bestParam_1SoFar;
-                    desiredResult.setFirstParameter(bestParam_0SoFar);
-                    desiredResult.setSecondParameter(bestParam_1SoFar);
-                    //      sumOfAllbestAlpha_0sSoFar += bestParam_0SoFar;
-                    //      sumOfAllbestAlpha_1sSoFar += bestParam_1SoFar;
-
-// desiredResult[2] = bestAlpha_0SoFar;
-                    break;
-                case 2:
-                    tableOfBeta_1sMultipliedInX_is = new float[betaSortedParameters.get(0).size()][numberOfSamples];
-                    for (int i = 0; i < betaSortedParameters.get(1).size(); i++) {
-                        for (int j = 0; j < numberOfSamples; j++) {
-                            //   tableOfParameter_1sMultipliedInX_is[i][j] = truncate(alpha_1WithoutDuplicates.get(i) * matrixOfData[j][1], 2);
-                            tableOfBeta_1sMultipliedInX_is[i][j] = betaSortedParameters.get(1).get(i) * matrixOfData[j][1];
-                        }
-                    }
-                    bestBeta_0SoFar = betaSortedParameters.get(0).get(0);
-                    bestBeta_1SoFar = betaSortedParameters.get(1).get(0);
-                    do {
-//    System.out.println("iterator_over_parameter_0 = " + iterator_over_parameter_0);
-                        for (int w = 0; w < numberOfSamples; w++) {
-                            errorTerm[w] = matrixOfData[w][3];
-                        }
-                        maintainedSumOfAllComputedErrorTerms = 0;
-
-                        iterator_over_beta_0 += 1;
-                        fixed_parameter_0 = betaSortedParameters.get(0).get(iterator_over_beta_0);
-//   System.out.println("fixed_parameter_0 = " + fixed_parameter_0);
-                        iterator_over_beta_1 = -1;
-                        addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                        do {
-                            //    System.out.println("iterator_over_parameter_1 = " + iterator_over_parameter_1);
-                            iterator_over_beta_1 += 1;
-
-                            fixed_parameter_1 = betaSortedParameters.get(1).get(iterator_over_beta_1);
-                            //   System.out.print("\nfixed_parameter_1 " + fixed_parameter_1);
-                            //    System.out.print("\n");
-                            addParameter_1TermToTheErrorTerm(iterator_over_beta_1, fixed_parameter_1, tableOfBeta_1sMultipliedInX_is);
-                            //    if (!solveOverLeftCenter && solveOverCenter && !solveOverRightCenter) {
-                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                            //   }
-
-                            substractParameter_1TermFromTheErrorTerm(iterator_over_beta_1, fixed_parameter_1, tableOfBeta_1sMultipliedInX_is);
-                        } while (iterator_over_beta_1 < betaSortedParameters.get(1).size() - 1);
-                    } while (iterator_over_beta_0 < betaSortedParameters.get(0).size() - 1);
-                    desiredResult.setFirstParameter(bestParam_0SoFar);
-                    desiredResult.setSecondParameter(bestParam_1SoFar);
-                    //      sumOfAllbestBeta_0sSoFar += bestParam_0SoFar;
-                    //     sumOfAllbestBeta_1sSoFar += bestParam_1SoFar;
-                    // desiredResult[2] = bestAlpha_0SoFar;
-                    break;
-                case 3:
-                    tableOfGamma_1sMultipliedInX_is = new float[gammaSortedParameters.get(0).size()][numberOfSamples];
-                    for (int i = 0; i < gammaSortedParameters.get(1).size(); i++) {
-                        for (int j = 0; j < numberOfSamples; j++) {
-                            //   tableOfParameter_1sMultipliedInX_is[i][j] = truncate(alpha_1WithoutDuplicates.get(i) * matrixOfData[j][1], 2);
-                            tableOfGamma_1sMultipliedInX_is[i][j] = gammaSortedParameters.get(1).get(i) * matrixOfData[j][1];
-                        }
-                    }
-                    bestGamma_0SoFar = gammaSortedParameters.get(0).get(0);
-                    bestGamma_1SoFar = gammaSortedParameters.get(1).get(0);
-                    do {
-//    System.out.println("iterator_over_parameter_0 = " + iterator_over_parameter_0);
-                        for (int w = 0; w < numberOfSamples; w++) {
-                            errorTerm[w] = matrixOfData[w][4];
-                        }
-                        maintainedSumOfAllComputedErrorTerms = 0;
-                        iterator_over_gamma_0 += 1;
-                        fixed_parameter_0 = gammaSortedParameters.get(0).get(iterator_over_gamma_0);
-//   System.out.println("fixed_parameter_0 = " + fixed_parameter_0);
-                        iterator_over_gamma_1 = -1;
-                        addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                        do {
-                            //    System.out.println("iterator_over_parameter_1 = " + iterator_over_parameter_1);
-                            iterator_over_gamma_1 += 1;
-
-                            fixed_parameter_1 = gammaSortedParameters.get(1).get(iterator_over_gamma_1);
-                            //   System.out.print("\nfixed_parameter_1 " + fixed_parameter_1);
-                            //    System.out.print("\n");
-                            addParameter_1TermToTheErrorTerm(iterator_over_gamma_1, fixed_parameter_1, tableOfGamma_1sMultipliedInX_is);
-                            //    if (!solveOverLeftCenter && solveOverCenter && !solveOverRightCenter) {
-                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                            //   }
-
-                            substractParameter_1TermFromTheErrorTerm(iterator_over_gamma_1, fixed_parameter_1, tableOfGamma_1sMultipliedInX_is);
-                        } while (iterator_over_gamma_1 < gammaSortedParameters.get(1).size() - 1);
-                    } while (iterator_over_gamma_0 < gammaSortedParameters.get(0).size() - 1);
-                    desiredResult.setFirstParameter(bestParam_0SoFar);
-                    desiredResult.setSecondParameter(bestParam_1SoFar);
-                    //     sumOfAllbestGamma_0sSoFar += bestParam_0SoFar;
-                    //    sumOfAllbestGamma_1sSoFar += bestParam_1SoFar;
-                    // desiredResult[2] = bestAlpha_0SoFar;
-                    break;
-                default:
-                    break;
-            }
-        }
-        /* else if (experimentNumber == 2) {
-            int iterator_over_alpha_2;
-            int iterator_over_alpha_3;
-            int iterator_over_alpha_4;
-            int iterator_over_alpha_5;
-            int iterator_over_beta_2 = -1;
-            int iterator_over_beta_3 = -1;
-            int iterator_over_beta_4 = -1;
-            int iterator_over_beta_5 = -1;
-            int iterator_over_gamma_2 = -1;
-            int iterator_over_gamma_3 = -1;
-            int iterator_over_gamma_4 = -1;
-            int iterator_over_gamma_5 = -1;
-            float fixed_parameter_2;
-            float fixed_parameter_3;
-            float fixed_parameter_4;
-            float fixed_parameter_5;
-            switch (whichPar) {
-                case 1:
-//                    tableOfAlpha_1sMultipliedInX_is = new float[alpha_1WithoutDuplicates.size()][n];
-//                    float ithElementOfalpha_1WithoutDuplicates;
-//                    for (int i = 0; i < alpha_1WithoutDuplicates.size(); i++) {
-//                        ithElementOfalpha_1WithoutDuplicates = alpha_1WithoutDuplicates.get(i);
-//                        for (int j = 0; j < n; j++) {
-//                            tableOfAlpha_1sMultipliedInX_is[i][j] = ithElementOfalpha_1WithoutDuplicates * matrixOfData[j][1];
-//                        }
-//                    }
-                    bestAlpha_0SoFar = parameter_0.get(0);
-                    bestAlpha_1SoFar = parameter_1.get(0);
-                    bestAlpha_2SoFar = alpha_2WithoutDuplicates.get(0);
-                    bestAlpha_3SoFar = alpha_3WithoutDuplicates.get(0);
-                    bestAlpha_4SoFar = alpha_4WithoutDuplicates.get(0);
-                    bestAlpha_5SoFar = alpha_5WithoutDuplicates.get(0);
-                    do {
-//                        for (int w = 0; w < n; w++) {
-//                            errorTerm[w] = matrixOfData[w][6];
-//                        }
-                        int iterator_over_columns = 0;
-                        maintainedSumOfAllComputedErrorTerms = 0;
-                        iterator_over_alpha_0 += 1;
-                        fixed_parameter_0 = parameter_0.get(iterator_over_alpha_0);
-                        System.out.println("fixed_parameter_0 = " + fixed_parameter_0);
-                        iterator_over_alpha_1 = -1;
-                        //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_0);
-                        developTheSum(iterator_over_columns, fixed_parameter_0);
-                        iterator_over_columns = 1;
-                        do {
-                            iterator_over_alpha_1 += 1;
-                            fixed_parameter_1 = parameter_1.get(iterator_over_alpha_1);
-                            //   addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_1);
-                            developTheSum(iterator_over_columns, fixed_parameter_1);
-                            iterator_over_columns = 2;
-                            iterator_over_alpha_2 = -1;
-                            do {
-                                iterator_over_alpha_2 += 1;
-                                System.out.println("iterator_over_alpha_2 = " + iterator_over_alpha_2);
-                                fixed_parameter_2 = alpha_2WithoutDuplicates.get(iterator_over_alpha_2);
-                                //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_2);
-                                developTheSum(iterator_over_columns, fixed_parameter_2);
-                                iterator_over_columns = 3;
-                                iterator_over_alpha_3 = -1;
-                                do {
-                                    iterator_over_alpha_3 += 1;
-                                    //    System.out.println("iterator_over_alpha_3 = " + iterator_over_alpha_3);
-                                    fixed_parameter_3 = alpha_3WithoutDuplicates.get(iterator_over_alpha_3);
-                                    //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_3);
-                                    developTheSum(iterator_over_columns, fixed_parameter_3);
-                                    iterator_over_columns = 4;
-                                    iterator_over_alpha_4 = -1;
-                                    do {
-                                        iterator_over_alpha_4 += 1;
-                                        //    System.out.println("iterator_over_alpha_4 = " + iterator_over_alpha_4);
-                                        fixed_parameter_4 = alpha_4WithoutDuplicates.get(iterator_over_alpha_4);
-                                        //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_4);
-                                        developTheSum(iterator_over_columns, fixed_parameter_4);
-                                        iterator_over_columns = 5;
-                                        iterator_over_alpha_5 = -1;
-                                        do {
-                                            iterator_over_alpha_5 += 1;
-                                            //    System.out.println("iterator_over_alpha_5 = " + iterator_over_alpha_5);
-                                            fixed_parameter_5 = alpha_5WithoutDuplicates.get(iterator_over_alpha_5);
-                                            developTheSum(iterator_over_columns, fixed_parameter_5);
-                                            addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_5);
-                                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation2(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, fixed_parameter_2, fixed_parameter_3, fixed_parameter_4, fixed_parameter_5);
-                                            //I have work here
-                                            //   substractParameter_iTermFromTheErrorTerm(iterator_over_columns, fixed_parameter_5);
-                                            substractFromTheSum(iterator_over_columns, fixed_parameter_5);
-                                            //    iterator_over_columns = 0;
-                                        } while (iterator_over_alpha_5 < sizeOfAlpha_5WithoutDuplicates - 1);
-                                        substractFromTheSum(--iterator_over_columns, fixed_parameter_4);
-                                    } while (iterator_over_alpha_4 < sizeOfAlpha_4WithoutDuplicates - 1);
-                                    substractFromTheSum(--iterator_over_columns, fixed_parameter_3);
-                                } while (iterator_over_alpha_3 < sizeOfAlpha_3WithoutDuplicates - 1);
-                                substractFromTheSum(--iterator_over_columns, fixed_parameter_2);
-                            } while (iterator_over_alpha_2 < sizeOfAlpha_2WithoutDuplicates - 1);
-                            substractFromTheSum(--iterator_over_columns, fixed_parameter_1);
-                        } while (iterator_over_alpha_1 < sizeOfAlpha_1WithoutDuplicates - 1);
-                        substractFromTheSum(--iterator_over_columns, fixed_parameter_0);
-                    } while (iterator_over_alpha_0 < sizeOfAlpha_0WithoutDuplicates - 1);
-                    desiredResult.setFirstParameter(bestParam_0SoFar);
-                    desiredResult.setSecondParameter(bestParam_1SoFar);
-                    desiredResult.setThirdParameter(bestParam_2SoFar);
-                    desiredResult.setFourthParameter(bestParam_3SoFar);
-                    desiredResult.setFifthParameter(bestParam_4SoFar);
-                    desiredResult.setSixthParameter(bestParam_5SoFar);
-                    break;
-                case 2:
-                    tableOfBeta_1sMultipliedInX_is = new float[parameter_0.size()][n];
-                    for (int i = 0; i < parameter_1.size(); i++) {
-                        for (int j = 0; j < n; j++) {
-                            tableOfBeta_1sMultipliedInX_is[i][j] = parameter_1.get(i) * matrixOfData[j][1];
-                        }
-                    }
-                    bestBeta_0SoFar = parameter_0.get(0);
-                    bestBeta_1SoFar = parameter_1.get(0);
-                    do {
-                        for (int w = 0; w < n; w++) {
-                            errorTerm[w] = matrixOfData[w][3];
-                        }
-                        maintainedSumOfAllComputedErrorTerms = 0;
-
-                        iterator_over_beta_0 += 1;
-                        fixed_parameter_0 = parameter_0.get(iterator_over_beta_0);
-                        iterator_over_beta_1 = -1;
-                        addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                        do {
-                            iterator_over_beta_1 += 1;
-                            fixed_parameter_1 = parameter_1.get(iterator_over_beta_1);
-                            addParameter_1TermToTheErrorTerm(iterator_over_beta_1, fixed_parameter_1, tableOfBeta_1sMultipliedInX_is);
-                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                            substractParameter_1TermFromTheErrorTerm(iterator_over_beta_1, fixed_parameter_1, tableOfBeta_1sMultipliedInX_is);
-                        } while (iterator_over_beta_1 < sizeOfBeta_1WithoutDuplicates - 1);
-                    } while (iterator_over_beta_0 < sizeOfBeta_0WithoutDuplicates - 1);
-                    desiredResult.setFirstParameter(bestParam_0SoFar);
-                    desiredResult.setSecondParameter(bestParam_1SoFar);
-                    break;
-                case 3:
-                    tableOfGamma_1sMultipliedInX_is = new float[parameter_0.size()][n];
-                    for (int i = 0; i < parameter_1.size(); i++) {
-                        for (int j = 0; j < n; j++) {
-                            tableOfGamma_1sMultipliedInX_is[i][j] = parameter_1.get(i) * matrixOfData[j][1];
-                        }
-                    }
-                    bestGamma_0SoFar = parameter_0.get(0);
-                    bestGamma_1SoFar = parameter_1.get(0);
-                    do {
-                        for (int w = 0; w < n; w++) {
-                            errorTerm[w] = matrixOfData[w][4];
-                        }
-                        maintainedSumOfAllComputedErrorTerms = 0;
-                        iterator_over_gamma_0 += 1;
-                        fixed_parameter_0 = parameter_0.get(iterator_over_gamma_0);
-                        iterator_over_gamma_1 = -1;
-                        addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                        do {
-                            iterator_over_gamma_1 += 1;
-                            fixed_parameter_1 = parameter_1.get(iterator_over_gamma_1);
-                            addParameter_1TermToTheErrorTerm(iterator_over_gamma_1, fixed_parameter_1, tableOfGamma_1sMultipliedInX_is);
-                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                            substractParameter_1TermFromTheErrorTerm(iterator_over_gamma_1, fixed_parameter_1, tableOfGamma_1sMultipliedInX_is);
-                        } while (iterator_over_gamma_1 < sizeOfGamma_1WithoutDuplicates - 1);
-                    } while (iterator_over_gamma_0 < sizeOfGamma_0WithoutDuplicates - 1);
-                    desiredResult.setFirstParameter(bestParam_0SoFar);
-                    desiredResult.setSecondParameter(bestParam_1SoFar);
-                    break;
-                default:
-                    break;
-            }
-        }
-         */
-        int[] arrayOfOutliers;
-        if (sortWithInsertionsort) {
-            arrayOfOutliers = arrayOfOutlierSamples(indices_of_samples_sorted_by_error, sortWithInsertionsort, whichPar);
-        } else {
-            arrayOfOutliers = arrayOfOutlierSamples(indices_of_samples_sorted_by_error1, sortWithInsertionsort, whichPar);
-        }
-
-        System.out.println("bestValueOfObjectiveFoundSoFar: " + bestValueOfObjectiveFoundSoFar);
-        System.out.println("sampleWithBesth_1SoFar: " + sampleWithBesth_1SoFar);
-        System.out.println("sampleWithBesth_2SoFar: " + sampleWithBesth_2SoFar);
-        System.out.println("bestParam_0: " + bestParam_0SoFar);
-        System.out.println("bestParam_1: " + bestParam_1SoFar);
-        //    System.out.println("number of outliers: " + arrayOfOutliers.length);
-        //   System.out.println("outliers are:");
-        //    Arrays.sort(arrayOfOutliers);
-        //   printArray(arrayOfOutliers);
-        desiredResult.setNumbOfOutliers(arrayOfOutliers.length);
-
-        return desiredResult;
-    }
-
-    /*
-    public desiredParametersToReport findBestParameters2(int experimentNumber, boolean sortWithInsertionsort, int numberOfUnknownParameters, float[][] all_parameters, int whichPar) {
-        desiredParametersToReport desiredResult = new desiredParametersToReport();
-        //    int n = getNumberOfSamples();
-        bestValueOfObjectiveFoundSoFar = 1.0f;
-        sampleWithBesth_1SoFar = 0;
-        sampleWithBesth_2SoFar = n - 1;
-        int[] indices_of_samples_sorted_by_error1 = new int[n];
-        if (sortWithInsertionsort) {
-            fillIdenticalArray(indices_of_samples_sorted_by_error);
-        }
-        int iterator_over_alpha_0 = -1;
-        int iterator_over_alpha_1;
-        int iterator_over_beta_0 = -1;
-        int iterator_over_beta_1;
-        int iterator_over_gamma_0 = -1;
-        int iterator_over_gamma_1;
-        float fixed_parameter_0;
-        //   float fixed_parameter_1;
-        float[] fixed_parameters = new float[numberOfUnknownParameters];
-        int iterator_over_alpha_2;
-        int iterator_over_alpha_3;
-        int iterator_over_alpha_4;
-        int iterator_over_alpha_5;
-        int iterator_over_beta_2 = -1;
-        int iterator_over_beta_3 = -1;
-        int iterator_over_beta_4 = -1;
-        int iterator_over_beta_5 = -1;
-        int iterator_over_gamma_2 = -1;
-        int iterator_over_gamma_3 = -1;
-        int iterator_over_gamma_4 = -1;
-        int iterator_over_gamma_5 = -1;
-        //    float fixed_parameter_2;
-        //    float fixed_parameter_3;
-        //    float fixed_parameter_4;
-        //    float fixed_parameter_5;
-        switch (whichPar) {
-            case 1:
-//                    tableOfAlpha_1sMultipliedInX_is = new float[alpha_1WithoutDuplicates.size()][n];
-//                    float ithElementOfalpha_1WithoutDuplicates;
-//                    for (int i = 0; i < alpha_1WithoutDuplicates.size(); i++) {
-//                        ithElementOfalpha_1WithoutDuplicates = alpha_1WithoutDuplicates.get(i);
-//                        for (int j = 0; j < n; j++) {
-//                            tableOfAlpha_1sMultipliedInX_is[i][j] = ithElementOfalpha_1WithoutDuplicates * matrixOfData[j][1];
-//                        }
-//                    }
-//                bestAlpha_0SoFar = (float) all_parameters[0][0];
-//                bestAlpha_1SoFar = (float) all_parameters[1][0];
-//                bestAlpha_2SoFar = (float) all_parameters[2][0];
-//                bestAlpha_3SoFar = (float) all_parameters[3][0];
-//                bestAlpha_4SoFar = (float) all_parameters[4][0];
-//                bestAlpha_5SoFar = (float) all_parameters[5][0];
-                bestAlpha_iSoFar = new float[numberOfUnknownParameters];
-                for (int t = 0; t < numberOfUnknownParameters; t++) {
-                    bestAlpha_iSoFar[t] = (float) all_parameters[t][0];
-                }
-                do {
-//                        for (int w = 0; w < n; w++) {
-//                            errorTerm[w] = matrixOfData[w][6];
-//                        }
-                    int iterator_over_columns = 0;
-                    maintainedSumOfAllComputedErrorTerms = 0;
-                    iterator_over_alpha_0 += 1;
-                    //    fixed_parameter_0 = alpha_0WithoutDuplicates.get(iterator_over_alpha_0);
-                    //    fixed_parameter_0 = (float) all_parameters[0][iterator_over_alpha_0];
-                    fixed_parameters[0] = (float) all_parameters[0][iterator_over_alpha_0];
-                    System.out.println("fixed_parameter_0 = " + fixed_parameters[0]);
-                    iterator_over_alpha_1 = -1;
-                    //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_0);
-                    developTheSum(iterator_over_columns, fixed_parameters[0]);
-                    iterator_over_columns = 1;
-                    do {
-                        iterator_over_alpha_1 += 1;
-                        //    fixed_parameter_1 = alpha_1WithoutDuplicates.get(iterator_over_alpha_1);
-
-                        fixed_parameters[1] = (float) all_parameters[1][iterator_over_alpha_1];
-
-                        //   addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_1);
-                        developTheSum(iterator_over_columns, fixed_parameters[1]);
-
-                        if (experimentNumber == 2) {
-                            iterator_over_columns = 2;
-                            iterator_over_alpha_2 = -1;
-                            do {
-                                iterator_over_alpha_2 += 1;
-                                System.out.println("iterator_over_alpha_2 = " + iterator_over_alpha_2);
-                                //    fixed_parameter_2 = alpha_2WithoutDuplicates.get(iterator_over_alpha_2);
-                                //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_2);
-                                fixed_parameters[2] = (float) all_parameters[2][iterator_over_alpha_2];
-
-                                developTheSum(iterator_over_columns, fixed_parameters[2]);
-                                iterator_over_columns = 3;
-                                iterator_over_alpha_3 = -1;
-                                do {
-                                    iterator_over_alpha_3 += 1;
-                                    //    System.out.println("iterator_over_alpha_3 = " + iterator_over_alpha_3);
-                                    fixed_parameters[3] = (float) all_parameters[3][iterator_over_alpha_3];
-                                    //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_3);
-                                    developTheSum(iterator_over_columns, fixed_parameters[3]);
-                                    iterator_over_columns = 4;
-                                    iterator_over_alpha_4 = -1;
-                                    do {
-                                        iterator_over_alpha_4 += 1;
-                                        //    System.out.println("iterator_over_alpha_4 = " + iterator_over_alpha_4);
-                                        fixed_parameters[4] = (float) all_parameters[4][iterator_over_alpha_4];
-                                        //    addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameter_4);
-                                        developTheSum(iterator_over_columns, fixed_parameters[4]);
-                                        iterator_over_columns = 5;
-                                        iterator_over_alpha_5 = -1;
-                                        do {
-                                            iterator_over_alpha_5 += 1;
-                                            //    System.out.println("iterator_over_alpha_5 = " + iterator_over_alpha_5);
-                                            fixed_parameters[5] = (float) all_parameters[5][iterator_over_alpha_5];
-                                            developTheSum(iterator_over_columns, fixed_parameters[5]);
-                                            addParameter_iTermToTheErrorTerm(iterator_over_columns, fixed_parameters[5]);
-                                            indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation2(sortWithInsertionsort, numberOfUnknownParameters, errorTerm, fixed_parameters);
-                                            //I have work here
-                                            //   substractParameter_iTermFromTheErrorTerm(iterator_over_columns, fixed_parameter_5);
-                                            substractFromTheSum(iterator_over_columns, fixed_parameters[5]);
-                                            //    iterator_over_columns = 0;
-                                        } while (iterator_over_alpha_5 < sizeOfAlpha_5WithoutDuplicates - 1);
-                                        substractFromTheSum(--iterator_over_columns, fixed_parameters[4]);
-                                    } while (iterator_over_alpha_4 < sizeOfAlpha_4WithoutDuplicates - 1);
-                                    substractFromTheSum(--iterator_over_columns, fixed_parameters[3]);
-                                } while (iterator_over_alpha_3 < sizeOfAlpha_3WithoutDuplicates - 1);
-                                substractFromTheSum(--iterator_over_columns, fixed_parameters[2]);
-                            } while (iterator_over_alpha_2 < sizeOfAlpha_2WithoutDuplicates - 1);
-                        }
-
-                        substractFromTheSum(--iterator_over_columns, fixed_parameters[1]);
-                    } while (iterator_over_alpha_1 < sizeOfAlpha_1WithoutDuplicates - 1);
-                    substractFromTheSum(--iterator_over_columns, fixed_parameters[0]);
-                } while (iterator_over_alpha_0 < sizeOfAlpha_0WithoutDuplicates - 1);
-                desiredResult.setFirstParameter(bestParam_0SoFar);
-                desiredResult.setSecondParameter(bestParam_1SoFar);
-                desiredResult.setThirdParameter(bestParam_2SoFar);
-                desiredResult.setFourthParameter(bestParam_3SoFar);
-                desiredResult.setFifthParameter(bestParam_4SoFar);
-                desiredResult.setSixthParameter(bestParam_5SoFar);
-                break;
-            case 2:
-                tableOfBeta_1sMultipliedInX_is = new float[parameter_0.size()][n];
-                for (int i = 0; i < parameter_1.size(); i++) {
-                    for (int j = 0; j < n; j++) {
-                        tableOfBeta_1sMultipliedInX_is[i][j] = parameter_1.get(i) * matrixOfData[j][1];
-                    }
-                }
-                bestBeta_0SoFar = parameter_0.get(0);
-                bestBeta_1SoFar = parameter_1.get(0);
-                do {
-                    for (int w = 0; w < n; w++) {
-                        errorTerm[w] = matrixOfData[w][3];
-                    }
-                    maintainedSumOfAllComputedErrorTerms = 0;
-
-                    iterator_over_beta_0 += 1;
-                    fixed_parameter_0 = parameter_0.get(iterator_over_beta_0);
-                    iterator_over_beta_1 = -1;
-                    addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                    do {
-                        iterator_over_beta_1 += 1;
-                        fixed_parameter_1 = parameter_1.get(iterator_over_beta_1);
-                        addParameter_1TermToTheErrorTerm(iterator_over_beta_1, fixed_parameter_1, tableOfBeta_1sMultipliedInX_is);
-                        indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                        substractParameter_1TermFromTheErrorTerm(iterator_over_beta_1, fixed_parameter_1, tableOfBeta_1sMultipliedInX_is);
-                    } while (iterator_over_beta_1 < sizeOfBeta_1WithoutDuplicates - 1);
-                } while (iterator_over_beta_0 < sizeOfBeta_0WithoutDuplicates - 1);
-                desiredResult.setFirstParameter(bestParam_0SoFar);
-                desiredResult.setSecondParameter(bestParam_1SoFar);
-                break;
-            case 3:
-                tableOfGamma_1sMultipliedInX_is = new float[parameter_1.size()][n];
-                for (int i = 0; i < parameter_1.size(); i++) {
-                    for (int j = 0; j < n; j++) {
-                        tableOfGamma_1sMultipliedInX_is[i][j] = parameter_1.get(i) * matrixOfData[j][1];
-                    }
-                }
-                bestGamma_0SoFar = parameter_0.get(0);
-                bestGamma_1SoFar = parameter_1.get(0);
-                do {
-                    for (int w = 0; w < n; w++) {
-                        errorTerm[w] = matrixOfData[w][4];
-                    }
-                    maintainedSumOfAllComputedErrorTerms = 0;
-                    iterator_over_gamma_0 += 1;
-                    fixed_parameter_0 = parameter_0.get(iterator_over_gamma_0);
-                    iterator_over_gamma_1 = -1;
-                    addParameter_0ToTheErrorTerm(fixed_parameter_0);
-                    do {
-                        iterator_over_gamma_1 += 1;
-                        fixed_parameter_1 = parameter_1.get(iterator_over_gamma_1);
-                        addParameter_1TermToTheErrorTerm(iterator_over_gamma_1, fixed_parameter_1, tableOfGamma_1sMultipliedInX_is);
-                        indices_of_samples_sorted_by_error1 = setUpTheObjectiveComputation(sortWithInsertionsort, errorTerm, fixed_parameter_0, fixed_parameter_1, 0, 0, 0, 0);
-                        substractParameter_1TermFromTheErrorTerm(iterator_over_gamma_1, fixed_parameter_1, tableOfGamma_1sMultipliedInX_is);
-                    } while (iterator_over_gamma_1 < sizeOfGamma_1WithoutDuplicates - 1);
-                } while (iterator_over_gamma_0 < sizeOfGamma_0WithoutDuplicates - 1);
-                desiredResult.setFirstParameter(bestParam_0SoFar);
-                desiredResult.setSecondParameter(bestParam_1SoFar);
-                break;
-            default:
-                break;
-        }
-
-        int[] arrayOfOutliers;
-        if (sortWithInsertionsort) {
-            arrayOfOutliers = arrayOfOutlierSamples(indices_of_samples_sorted_by_error, sortWithInsertionsort, whichPar);
-        } else {
-            arrayOfOutliers = arrayOfOutlierSamples(indices_of_samples_sorted_by_error1, sortWithInsertionsort, whichPar);
-        }
-
-        System.out.println("bestValueOfObjectiveFoundSoFar: " + bestValueOfObjectiveFoundSoFar);
-        System.out.println("sampleWithBesth_1SoFar: " + sampleWithBesth_1SoFar);
-        System.out.println("sampleWithBesth_2SoFar: " + sampleWithBesth_2SoFar);
-        System.out.println("bestParam_0: " + bestParam_0SoFar);
-        System.out.println("bestParam_1: " + bestParam_1SoFar);
-        //    System.out.println("number of outliers: " + arrayOfOutliers.length);
-        //   System.out.println("outliers are:");
-        //    Arrays.sort(arrayOfOutliers);
-        //   printArray(arrayOfOutliers);
-        desiredResult.setNumbOfOutliers(arrayOfOutliers.length);
-
-        return desiredResult;
-    }
-     */
     public int[] arrayOfOutlierSamples(int[] indices_of_samples_sorted_by_error1, boolean sortWithInsertionsort, int whichPar
     ) {
         //    int n = getNumberOfSamples();
@@ -1634,78 +996,6 @@ public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters
             tableOf_column_something_MinusParameter_0s[w] = matrixOfData[w][whichColumn] - fixed_something_0;
         }
         return tableOf_column_something_MinusParameter_0s;
-    }
-
-//    public void unfillInArrayWithCoefficientBeta(float[] tableOf_l_iMinusBeta_0s) {
-//        int n = getNumberOfSamples();
-//
-//        for (int w = 0; w < n; w++) {
-//            errorTerm[w] -= coefficientOfSecondErrorTerm * tableOf_l_iMinusBeta_0s[w];
-//        }
-//    }
-//
-//    public void unfillInArrayWithCoefficientGamma(float[] tableOf_column_rMinusGamma_0s) {
-//        int n = getNumberOfSamples();
-//
-//        for (int w = 0; w < n; w++) {
-//            errorTerm[w] -= coefficientOfThirdErrorTerm * tableOf_column_rMinusGamma_0s[w];
-//        }
-//    }
-    public void addParameter_1TermToTheErrorTerm(int iterator_over_parameter_1, float fixed_something_1, float[][] tableOfAlpha_1sMultipliedInX_is) {
-        //   int n = getNumberOfSamples();
-        for (int i = 0; i < numberOfSamples; i++) {
-            if (errorTerm[i] >= tableOfAlpha_1sMultipliedInX_is[iterator_over_parameter_1][i]) {
-                errorTerm[i] += (-tableOfAlpha_1sMultipliedInX_is[iterator_over_parameter_1][i]);
-                maintainedSumOfAllComputedErrorTerms += (-tableOfAlpha_1sMultipliedInX_is[iterator_over_parameter_1][i]);
-            } else {
-                float prevValue = errorTerm[i];
-                errorTerm[i] = -errorTerm[i] + tableOfAlpha_1sMultipliedInX_is[iterator_over_parameter_1][i];
-                maintainedSumOfAllComputedErrorTerms += (errorTerm[i] - prevValue);
-                signOfThisCorrespondingErrorTermIsNegative[i] = true;
-            }
-        }
-    }
-
-    public void addParameter_iTermToTheErrorTerm(int iterator_over_columns, float fixed_something_i) {
-
-        for (int i = 0; i < numberOfSamples; i++) {
-            if (matrixOfData[i][6] > sumOfAllParamTimesX_jsSoFar[i]) {
-                errorTerm[i] = matrixOfData[i][6] - sumOfAllParamTimesX_jsSoFar[i];
-            } else {
-                errorTerm[i] = -matrixOfData[i][6] + sumOfAllParamTimesX_jsSoFar[i];
-            }
-            maintainedSumOfAllComputedErrorTerms += errorTerm[i];
-        }
-    }
-
-    public void developTheSum(int iterator_over_columns, float fixed_something_i) {
-        for (int i = 0; i < numberOfSamples; i++) {
-            sumOfAllParamTimesX_jsSoFar[i] += fixed_something_i * matrixOfData[i][iterator_over_columns];
-        }
-    }
-
-    public void substractFromTheSum(int iterator_over_columns, float fixed_something_i) {
-        for (int i = 0; i < numberOfSamples; i++) {
-            sumOfAllParamTimesX_jsSoFar[i] -= fixed_something_i * matrixOfData[i][iterator_over_columns];
-        }
-    }
-
-    public void substractParameter_1TermFromTheErrorTerm(int iterator_over_parameter_1, float fixed_something_1, float[][] tableOfAlpha_1sMultipliedInX_is) {
-        float temp;
-        for (int i = 0; i < numberOfSamples; i++) {
-            temp = tableOfAlpha_1sMultipliedInX_is[iterator_over_parameter_1][i];
-            if (!signOfThisCorrespondingErrorTermIsNegative[i]) {
-                errorTerm[i] += temp;
-                maintainedSumOfAllComputedErrorTerms += temp;
-            } else {
-                //    error[i] -= truncate(fixed_something_1 * matrixOfData[i][1], 2);
-                float prevVal = errorTerm[i];
-                errorTerm[i] = -errorTerm[i] + temp;
-                maintainedSumOfAllComputedErrorTerms += (errorTerm[i] - prevVal);
-                signOfThisCorrespondingErrorTermIsNegative[i] = false;
-            }
-
-        }
     }
 
     public int[] fillIdenticalArray(int[] a) {
@@ -2061,6 +1351,14 @@ public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters
             if (!MatrixUtils.isSingular(A)) {
                 solution = solveTheSystem(A, B);
 
+                //test
+/*
+                float temp = 0.0f;
+                for (int i = 0; i < numberOfUnknownParameters; i++)
+                    temp += A[4][i] * solution[i];
+                System.out.println(temp);
+                System.out.println(B[4]);
+                 */
                 // ONE-SHOT VERTICAL DEPOSITION:
                 // Distribute parameter elements straight into their target tracks.
                 // Completely bypasses temporary horizontal float[] array allocations.
@@ -2096,42 +1394,34 @@ public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters
         for (int p = 0; p < numberOfUnknownParameters; p++) {
             java.util.Collections.sort(sortedParameters.get(p));
         }
+        //why would we ever sort here?
 
-        
-        
-                if (experimentNumber == 1) {
+        if (experimentNumber == 1) {
             switch (dimensionOfRightvestorInDataFile) {
-                case 2:
+                case 2 ->
                     alphaSortedParameters = sortedParameters;
-                    break;
-                case 3:
+                case 3 ->
                     betaSortedParameters = sortedParameters;
-                    break;
-                case 4:
+                case 4 ->
                     gammaSortedParameters = sortedParameters;
-                    break;
-                default:
-                    break;
+                default -> {
+                }
             }
         } else if (experimentNumber == 2) {
             switch (dimensionOfRightvestorInDataFile) {
-                case 6:
+                case 6 ->
                     alphaSortedParameters = sortedParameters;
-                    break;
-                case 7:
+                case 7 -> {
                     betaSortedParameters = sortedParameters;
                     gammaSortedParameters = betaSortedParameters;
-                    break;
-                default:
-                    break;
+                }
+                default -> {
+                }
             }
         }
-        
-        
-        
-        
+
         // Returns the fully isolated, fully sorted lists directly
-    //    return sortedParameters;
+        //    return sortedParameters;
     }
 
     public static void organizeAllSolutionsInASortedList(int experimentNumber, int numberOfUnknownParameters, List<float[]> allOneOfAlphaOrBetaOrGammaSolutions, int dimensionOfRightvestorInDataFile) {

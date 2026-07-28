@@ -69,32 +69,21 @@ public class TT2 {
     public static void main(String[] args) throws IOException {
         int experimentNumber = 2;
         TT2 A = new TT2(experimentNumber);
-        if (experimentNumber == 1) {
-            CreateDataInExcelFile2Parameters L1 = new CreateDataInExcelFile2Parameters();
-            for (int q = 0; q < NUMBER_OF_GENERATED_INSTANCES; q++) {
-                L1.generateDataOfExperiment1(q, NumberOfSamples);
-            }
-        } else if (experimentNumber == 2) {
-            CreateDataInExcelFile5Parameters L2 = new CreateDataInExcelFile5Parameters();
-            for (int q = 0; q < NUMBER_OF_GENERATED_INSTANCES; q++) {
-                int numberOfOkSamples = (int) (0.9 * NumberOfSamples);
-                L2.generateDataOfExperiment2(q, NumberOfSamples, numberOfOkSamples);
-            }
-        }
-        A.launchExperiment(experimentNumber);
+        generateDataDependingOnTheExperiment(experimentNumber);
+        A.launchTheEntireExperiment(experimentNumber);
     }
 
-    public void launchExperiment(int experimentNumber) throws FileNotFoundException, IOException {
+    public void launchTheEntireExperiment(int experimentNumber) throws FileNotFoundException, IOException {
 
         String dataName;
         for (int r = 0; r < NUMBER_OF_GENERATED_INSTANCES; r++) {
             dataName = "generatedData" + r + ".xls";
-            runAllExperiments(dataName, experimentNumber);
+            runExperimentsOverThisData(dataName, experimentNumber);
             System.out.println("got rid of running experiments on instance " + r);
         }
     }
 
-    public void runAllExperiments(String dataName, int experimentNumber) {
+    public void runExperimentsOverThisData(String dataName, int experimentNumber) {
         //initialize the required data structures
         initializeRequiredVectors X = new initializeRequiredVectors(NumberOfSamples, numberOfKnownParameters, experimentNumber);
         try {
@@ -118,15 +107,15 @@ public class TT2 {
     }
 
     public static void createNewColumnsOfExcelOutputFile(int experimentNumber, int numberOfUnknownParameters, int whichParameter, initializeRequiredVectors X, int dimensionOfRightvestorInDataFile) {
-    //    List<float[]> allOneOfAlphaOrBetaOrGammaSolutions = establishTheSystemOfEquationsAndSolve(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
-    //    organizeAllSolutionsInASortedList(experimentNumber, numberOfUnknownParameters, allOneOfAlphaOrBetaOrGammaSolutions, dimensionOfRightvestorInDataFile);
-         establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
+        //    List<float[]> allOneOfAlphaOrBetaOrGammaSolutions = establishTheSystemOfEquationsAndSolve(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
+        //    organizeAllSolutionsInASortedList(experimentNumber, numberOfUnknownParameters, allOneOfAlphaOrBetaOrGammaSolutions, dimensionOfRightvestorInDataFile);
+        establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
         if ((experimentNumber == 1 && dimensionOfRightvestorInDataFile > numberOfUnknownParameters + 1)
                 || (experimentNumber == 2 && dimensionOfRightvestorInDataFile > numberOfUnknownParameters)) {
             //dimensionOfRightvestorInDataFile = numberOfUnknownParameters;
             //    X.tmpi(numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
             //   X.findGlobalMinimumOOptimized(experimentNumber);
-            X.findGlobalMinimumOOptimized2();
+            X.findGlobalMinimumOOptimized2(experimentNumber);
 
         }
     }
@@ -226,6 +215,21 @@ public class TT2 {
         } catch (java.io.IOException e) {
             System.err.println("Fatal Error writing tracking results matrix to drive.");
             e.printStackTrace();
+        }
+    }
+
+    public static void generateDataDependingOnTheExperiment(int experimentNumber) {
+        if (experimentNumber == 1) {
+            CreateDataInExcelFile2Parameters L1 = new CreateDataInExcelFile2Parameters();
+            for (int q = 0; q < NUMBER_OF_GENERATED_INSTANCES; q++) {
+                L1.generateDataOfExperiment1(q, NumberOfSamples);
+            }
+        } else if (experimentNumber == 2) {
+            CreateDataInExcelFile5Parameters L2 = new CreateDataInExcelFile5Parameters();
+            for (int q = 0; q < NUMBER_OF_GENERATED_INSTANCES; q++) {
+                int numberOfOkSamples = (int) (0.9 * NumberOfSamples);
+                L2.generateDataOfExperiment2(q, NumberOfSamples, numberOfOkSamples);
+            }
         }
     }
 }
