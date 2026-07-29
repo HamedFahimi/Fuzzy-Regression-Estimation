@@ -520,7 +520,7 @@ public class initializeRequiredVectors {
         int M = matrixOfData[0].length;
         int numX;
         if (experimentNumber == 1) {
-            numX = M - 3; 
+            numX = M - 3;
         } else {
             numX = M - 2;
         }
@@ -546,6 +546,8 @@ public class initializeRequiredVectors {
 
             double[] E = new double[N];
             double[] prefixSum = new double[N + 1];
+            double[] prefixSum2 = new double[N];
+
             prefixSum[0] = 0;
 
             for (int i = 0; i < N; i++) {
@@ -559,13 +561,25 @@ public class initializeRequiredVectors {
                     sumGammaX += currentGammas[j] * xVal;
                 }
 
-                // M-3 is Y, M-2 is L, M-1 is R
-                E[i] = Math.abs(row[M - 3] - sumAlphaX)
-                        + 0.5 * Math.abs(row[M - 2] - sumBetaX)
-                        + 0.5 * Math.abs(row[M - 1] - sumGammaX);
-
+                if (experimentNumber == 1) {
+                    E[i] = Math.abs(row[numX] - sumAlphaX)
+                            + 0.5 * Math.abs(row[numX + 1] - sumBetaX)
+                            + 0.5 * Math.abs(row[numX + 2] - sumGammaX);
+                } else {
+                    E[i] = Math.abs(row[numX] - sumAlphaX)
+                            + 0.5 * Math.abs(row[numX + 1] - sumBetaX)
+                            + 0.5 * Math.abs(row[numX + 1] - sumGammaX);
+                }
                 prefixSum[i + 1] = prefixSum[i] + E[i];
+                if (i == 0) {
+                    prefixSum2[i] = E[i];
+                } else {
+                    prefixSum2[i] = prefixSum2[i - 1] + E[i];
+                }
+
             }
+            
+            
 
             double totalSumE = prefixSum[N];
             if (totalSumE < 1e-12) {
@@ -573,7 +587,7 @@ public class initializeRequiredVectors {
             }
 
             for (int h1 = 0; h1 < h1Max; h1++) {
-                for (int h2 = h2Start - 1; h2 < N; h2++) {
+                for (int h2 = h2Start; h2 < N; h2++) {
                     int currentWindowSize = h2 - h1 + 1;
                     if (currentWindowSize < minWindowSize) {
                         continue;

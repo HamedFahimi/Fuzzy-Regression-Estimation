@@ -67,9 +67,9 @@ public class TT2 {
     }
 
     public static void main(String[] args) throws IOException {
-        int experimentNumber = 2;
+        int experimentNumber = 1;
         TT2 A = new TT2(experimentNumber);
-        generateDataDependingOnTheExperiment(experimentNumber);
+       generateDataDependingOnTheExperiment(experimentNumber);
         A.launchTheEntireExperiment(experimentNumber);
     }
 
