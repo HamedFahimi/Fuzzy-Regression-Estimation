@@ -7,10 +7,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Comparator;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.DecompositionSolver;
@@ -24,45 +24,31 @@ import org.apache.poi.ss.usermodel.Row;
 
 public class initializeRequiredVectors {
 
-    // Keeps track of the 10 rows in memory so we never have to append to a file
     private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
     private static float[] centralAlphas;
     private static float[] centralBetas;
     private static float[] centralGammas;
     private static final double EPS = 1e-10;
-    private static int numberOfSamples;         //n = numberOfSamples
-    private static int[] indices_of_samples_sorted_by_error;
+    private static int numberOfSamplesPerDataFile;         //n = numberOfSamples
     private static List<List<Float>> alphaSortedParameters;
     private static List<List<Float>> betaSortedParameters;
     private static List<List<Float>> gammaSortedParameters;
-    private static float[] bestParam_iSoFar;
-    private static float bestParam_0SoFar;
-    private static float bestParam_1SoFar;
-    private static int sampleWithBesth_1SoFar;
-    private static int sampleWithBesth_2SoFar;
-    private static float bestValueOfObjectiveFoundSoFar;
-    private static float[] errorTerm;
     static float[][] matrixOfData;
-    float[][] tableOfAlpha_1sMultipliedInX_is;
-    float[][] tableOfBeta_1sMultipliedInX_is;
-    float[][] tableOfGamma_1sMultipliedInX_is;
-    static float maintainedSumOfAllComputedErrorTerms;
+    private static final int NUMBER_OF_GENERATED_INSTANCES = 10;
 
-    // Add this list at the class level (above your method) to track results in memory
-//private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
     //the name of this method looks inconvenient. Later change it to something like initializeExperiment ...
     public initializeRequiredVectors(int n, int numberOfKnownParameters, int experimentNumber) {
-        numberOfSamples = n;
+        numberOfSamplesPerDataFile = n;
         if (experimentNumber == 1) {
             matrixOfData = new float[n][numberOfKnownParameters];
-            centralAlphas = new float[numberOfKnownParameters];
-            centralBetas = new float[numberOfKnownParameters];
-            centralGammas = new float[numberOfKnownParameters];
+            centralAlphas = new float[2];
+            centralBetas = new float[2];
+            centralGammas = new float[2];
             centralAlphas[0] = 10.0f;
             centralAlphas[1] = 3.0f;
             centralBetas[0] = -15.0f;
             centralBetas[1] = 0.1f;
-            centralGammas[0] = -40f;
+            centralGammas[0] = -40.0f;
             centralGammas[1] = 0.2f;
 
         } else if (experimentNumber == 2) {
@@ -85,30 +71,10 @@ public class initializeRequiredVectors {
             centralBetas[4] = 0.1f;
             centralBetas[5] = 1.0f;
         }
-        //    NanDetected = false;
-        errorTerm = new float[n];
-        indices_of_samples_sorted_by_error = new int[n];
-    }
-
-    public int getNumberOfSamples() {
-        return numberOfSamples;
-    }
-
-    public int choose2OverN() {
-        int m = getNumberOfSamples();
-        return m * (m - 1) / 2;
-    }
-
-    public int factorial(int n) {
-        if (n == 0) {
-            return 1;
-        } else {
-            return factorial(n - 1) * n;
-        }
     }
 
     public void developTheMatrixOfData(String dataName, int experimentNumber) throws FileNotFoundException, IOException {
-        int n = getNumberOfSamples();
+        int n = numberOfSamplesPerDataFile;
         int i;
         for (i = 0; i < n; i++) {
             matrixOfData[i][0] = 1.0f;
@@ -118,70 +84,13 @@ public class initializeRequiredVectors {
         FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
         HSSFWorkbook wb = new HSSFWorkbook(fis);
         HSSFSheet sheet = wb.getSheetAt(0);
-        if (experimentNumber == 1) {
-            for (Row row : sheet) {
-                j = 1;
-                for (Cell cell : row) {
-                    switch (j) {
-                        case 1:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 2:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 3:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 4:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-
-                        //}
-//                    case 8:
-//                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-//                        break;
-                    }
-                    j++;
-                }
-                i++;
+        for (Row row : sheet) {
+            j = 1;
+            for (Cell cell : row) {
+                matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
+                j++;
             }
-        } else if (experimentNumber == 2) {
-            for (Row row : sheet) {
-                j = 1;
-                for (Cell cell : row) {
-                    switch (j) {
-                        case 1:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 2:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 3:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 4:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        //normally for experiment 2 here counts
-                        //    if (experimentNumber == 2) {
-                        case 5:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 6:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        case 7:
-                            matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-                            break;
-                        //}
-//                    case 8:
-//                        matrixOfData[i][j] = truncate((float) cell.getNumericCellValue(), 2);
-//                        break;
-                    }
-                    j++;
-                }
-                i++;
-            }
+            i++;
         }
     }
 
@@ -213,10 +122,10 @@ public class initializeRequiredVectors {
         }
 
         // Initialize matrix: column 0 = 1s, then data columns
-        matrixOfData = new float[numberOfSamples][1 + dataColumnsToRead];
+        matrixOfData = new float[numberOfSamplesPerDataFile][1 + dataColumnsToRead];
 
         // Initialize first column with 1.0f for all rows
-        for (rowIndex = 0; rowIndex < numberOfSamples; rowIndex++) {
+        for (rowIndex = 0; rowIndex < numberOfSamplesPerDataFile; rowIndex++) {
             matrixOfData[rowIndex][0] = 1.0f;
         }
 
@@ -238,7 +147,7 @@ public class initializeRequiredVectors {
                 }
 
                 rowIndex++;
-                if (rowIndex >= numberOfSamples) {
+                if (rowIndex >= numberOfSamplesPerDataFile) {
                     break;
                 }
             }
@@ -271,7 +180,7 @@ public class initializeRequiredVectors {
                 }
 
                 rowIndex++;
-                if (rowIndex >= numberOfSamples) {
+                if (rowIndex >= numberOfSamplesPerDataFile) {
                     break;
                 }
             }
@@ -524,12 +433,12 @@ public class initializeRequiredVectors {
         } else {
             numX = M - 2;
         }
-        int h1Max = N / 4;
-        int h2Start = (3 * N) / 4;
-        int minWindowSize = N / 2;
+        int h1Max = N / 4 - 1;
+        int h2Start = 3 * N / 4;
+        //    int minWindowSize = N / 2;
 
         double globalMinO = Double.MAX_VALUE;
-        int bestH1 = -1, bestH2 = -1, bestSolIdx = -1;
+        int bestH1, bestH2, bestSolIdx = -1;
 
         int numSolutions = alphaSortedParameters.get(0).size();
 
@@ -545,11 +454,13 @@ public class initializeRequiredVectors {
             }
 
             double[] E = new double[N];
-            double[] prefixSum = new double[N + 1];
+    //        double[] prefixSum = new double[N + 1];
             double[] prefixSum2 = new double[N];
 
-            prefixSum[0] = 0;
+      //      prefixSum[0] = 0;
 
+// First, compute E values for all i
+            // float[] E = new float[N];
             for (int i = 0; i < N; i++) {
                 float sumAlphaX = 0, sumBetaX = 0, sumGammaX = 0;
                 float[] row = matrixOfData[i];
@@ -562,165 +473,190 @@ public class initializeRequiredVectors {
                 }
 
                 if (experimentNumber == 1) {
-                    E[i] = Math.abs(row[numX] - sumAlphaX)
+                    E[i] = (float) (Math.abs(row[numX] - sumAlphaX)
                             + 0.5 * Math.abs(row[numX + 1] - sumBetaX)
-                            + 0.5 * Math.abs(row[numX + 2] - sumGammaX);
+                            + 0.5 * Math.abs(row[numX + 2] - sumGammaX));
                 } else {
-                    E[i] = Math.abs(row[numX] - sumAlphaX)
+                    E[i] = (float) (Math.abs(row[numX] - sumAlphaX)
                             + 0.5 * Math.abs(row[numX + 1] - sumBetaX)
-                            + 0.5 * Math.abs(row[numX + 1] - sumGammaX);
+                            + 0.5 * Math.abs(row[numX + 1] - sumGammaX));
                 }
-                prefixSum[i + 1] = prefixSum[i] + E[i];
-                if (i == 0) {
-                    prefixSum2[i] = E[i];
-                } else {
-                    prefixSum2[i] = prefixSum2[i - 1] + E[i];
-                }
-
             }
-            
-            
 
-            double totalSumE = prefixSum[N];
+// Sort E and get sorted indices
+            Integer[] sortedIndices = new Integer[N];
+            for (int i = 0; i < N; i++) {
+                sortedIndices[i] = i;
+            }
+            Arrays.sort(sortedIndices, Comparator.comparingDouble(i -> E[i]));
+
+// Build prefixSum based on SORTED E
+            float[] sortedE = new float[N];
+            //    float[] prefixSum = new float[N + 1];
+            //   float[] prefixSum2 = new float[N]; // if you still need this
+
+            for (int idx = 0; idx < N; idx++) {
+                int originalIndex = sortedIndices[idx];
+                sortedE[idx] = (float) E[originalIndex];
+             //   prefixSum[idx + 1] = prefixSum[idx] + sortedE[idx];
+
+                if (idx == 0) {
+                    prefixSum2[idx] = sortedE[idx];
+                } else {
+                    prefixSum2[idx] = prefixSum2[idx - 1] + sortedE[idx];
+                }
+            }
+
+// Now iterate over SORTED indices
+            double totalSumE = prefixSum2[N - 1];
             if (totalSumE < 1e-12) {
                 continue;
             }
 
+// IMPORTANT: h1 and h2 now refer to positions in the SORTED array
             for (int h1 = 0; h1 < h1Max; h1++) {
                 for (int h2 = h2Start; h2 < N; h2++) {
                     int currentWindowSize = h2 - h1 + 1;
-                    if (currentWindowSize < minWindowSize) {
+                    if (currentWindowSize < N / 2.0) {
                         continue;
                     }
 
-                    double numerator = prefixSum[h2 + 1] - prefixSum[h1];
+                //    double numerator = prefixSum[h2 + 1] - prefixSum[h1];
+                    double numerator;
+                    if (h1 == 0) {
+                        numerator = prefixSum2[h2];
+                    } else {
+                        numerator = prefixSum2[h2] - prefixSum2[h1 - 1];
+                    }
+
                     double currentO = numerator / totalSumE;
 
                     if (currentO < globalMinO) {
                         globalMinO = currentO;
-                        bestH1 = h1;
-                        bestH2 = h2;
+                        bestH1 = h1;        // These are now indices in the SORTED array
+                        bestH2 = h2;        // These are now indices in the SORTED array
                         bestSolIdx = s;
                     }
                 }
             }
-        }
 
-        // =========================================================================
-        // MEMORY-COLLECTOR & SINGLE-SHOT DYNAMIC WRITE ACTION
-        // =========================================================================
-        if (bestSolIdx != -1) {
-            int K = numX; // Dynamic number of parameters per group
-            int totalParams = 3 * K;
+            // =========================================================================
+            // MEMORY-COLLECTOR & SINGLE-SHOT DYNAMIC WRITE ACTION
+            // =========================================================================
+            //  if (bestSolIdx != -1) {
+            if (s + 1 == numSolutions) {
+                int K = numX; // Dynamic number of parameters per group
+                int totalParams = 3 * K;
 
-            // Extract all dynamic winning parameters into one row array
-            float[] currentResult = new float[totalParams];
-            int pIdx = 0;
-
-            for (int j = 0; j < K; j++) {
-                currentResult[pIdx++] = alphaSortedParameters.get(j).get(bestSolIdx);
-            }
-            for (int j = 0; j < K; j++) {
-                currentResult[pIdx++] = betaSortedParameters.get(j).get(bestSolIdx);
-            }
-            for (int j = 0; j < K; j++) {
-                currentResult[pIdx++] = gammaSortedParameters.get(j).get(bestSolIdx);
-            }
-
-            // Save row to memory list
-            allFileResults.add(currentResult);
-
-            // Process file generation on the 10th result load
-            if (allFileResults.size() == 10) {
-                String filename = "OptimizationResults.csv";
-                java.io.File file = new java.io.File(filename);
-
-                // Stitch together your pre-determined, unique baseline lists
-                double[] centralBaselines = new double[totalParams];
-                int bIdx = 0;
-
+                // Extract all dynamic winning parameters into one row array
+                float[] currentResult = new float[totalParams];
+                int pIdx = 0;
+                System.out.println("solution number " + bestSolIdx + " gave the best");
                 for (int j = 0; j < K; j++) {
-                    centralBaselines[bIdx++] = centralAlphas[j]; // Match to alpha0, alpha1...
+                    currentResult[pIdx++] = alphaSortedParameters.get(j).get(bestSolIdx);
                 }
                 for (int j = 0; j < K; j++) {
-                    centralBaselines[bIdx++] = centralBetas[j];  // Match to beta0, beta1...
+                    currentResult[pIdx++] = betaSortedParameters.get(j).get(bestSolIdx);
                 }
                 for (int j = 0; j < K; j++) {
-                    centralBaselines[bIdx++] = centralGammas[j]; // Match to gamma0, gamma1...
+                    currentResult[pIdx++] = gammaSortedParameters.get(j).get(bestSolIdx);
                 }
 
-                double[] columnSums = new double[totalParams];
-                double[] columnSumSquaredDeviations = new double[totalParams];
+                // Save row to memory list
+                allFileResults.add(currentResult);
 
-                // Overwrite old file execution completely
-                try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+                // Process file generation on the 10th result load
+                if (allFileResults.size() == NUMBER_OF_GENERATED_INSTANCES) {
 
-                    // Row 1: Generate Dynamic CSV Labels
-                    StringBuilder sbHeaders = new StringBuilder();
+                    //    if( s + 1 == numSolutions) {
+                    String filename = "OptimizationResults.csv";
+                    java.io.File file = new java.io.File(filename);
+
+                    // Stitch together your pre-determined, unique baseline lists
+                    double[] centralBaselines = new double[totalParams];
+                    int bIdx = 0;
+
                     for (int j = 0; j < K; j++) {
-                        sbHeaders.append("alpha").append(j).append(",");
+                        centralBaselines[bIdx++] = centralAlphas[j]; // Match to alpha0, alpha1...
                     }
                     for (int j = 0; j < K; j++) {
-                        sbHeaders.append("beta").append(j).append(",");
+                        centralBaselines[bIdx++] = centralBetas[j];  // Match to beta0, beta1...
                     }
                     for (int j = 0; j < K; j++) {
-                        sbHeaders.append("gamma").append(j);
-                        if (j < K - 1) {
-                            sbHeaders.append(",");
+                        centralBaselines[bIdx++] = centralGammas[j]; // Match to gamma0, gamma1...
+                    }
+
+                    double[] columnSums = new double[totalParams];
+                    double[] columnSumSquaredDeviations = new double[totalParams];
+
+                    // Overwrite old file execution completely
+                    try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+
+                        // Row 1: Generate Dynamic CSV Labels
+                        StringBuilder sbHeaders = new StringBuilder();
+                        for (int j = 0; j < K; j++) {
+                            sbHeaders.append("alpha").append(j).append(",");
                         }
-                    }
-                    pw.println(sbHeaders.toString());
-
-                    // Rows 2 to 11: The exact 10 data rows from memory
-                    for (float[] rowParams : allFileResults) {
-                        for (int col = 0; col < totalParams; col++) {
-                            pw.printf("%f", rowParams[col]);
-                            if (col < totalParams - 1) {
-                                pw.print(",");
+                        for (int j = 0; j < K; j++) {
+                            sbHeaders.append("beta").append(j).append(",");
+                        }
+                        for (int j = 0; j < K; j++) {
+                            sbHeaders.append("gamma").append(j);
+                            if (j < K - 1) {
+                                sbHeaders.append(",");
                             }
+                        }
+                        pw.println(sbHeaders.toString());
 
-                            double val = rowParams[col];
-                            columnSums[col] += val;
+                        // Rows 2 to 11: The exact 10 data rows from memory
+                        for (float[] rowParams : allFileResults) {
+                            for (int col = 0; col < totalParams; col++) {
+                                pw.printf("%f", rowParams[col]);
+                                if (col < totalParams - 1) {
+                                    pw.print(",");
+                                }
 
-                            // Deviation calculation using unique individual parameter centers
-                            double deviation = val - centralBaselines[col];
-                            columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                                double val = rowParams[col];
+                                columnSums[col] += val;
+
+                                // Deviation calculation using unique individual parameter centers
+                                double deviation = val - centralBaselines[col];
+                                columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                            }
+                            pw.println();
+                        }
+
+                        // Row 12: Blank row spacer matching cell width dynamically
+                        for (int col = 0; col < totalParams - 1; col++) {
+                            pw.print(",");
                         }
                         pw.println();
+
+                        // Row 13: Pure numeric Averages
+                        for (int col = 0; col < totalParams; col++) {
+                            pw.print(col == 0 ? String.format("%f", columnSums[col] / 10)
+                                    : String.format(",%f", columnSums[col] / 10));
+                        }
+                        pw.println();
+
+                        // Row 14: Pure numeric Squared Deviations from unique baselines
+                        for (int col = 0; col < totalParams; col++) {
+                            double msd = columnSumSquaredDeviations[col] / 10;
+                            pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
+                        }
+                        pw.println();
+
+                        System.out.println("Excel file successfully created fresh with exactly 14 rows.");
+
+                        // Clear the cache for clean resets next time main runs
+                        allFileResults.clear();
+
+                    } catch (java.io.IOException e) {
+                        System.err.println("Error writing out final dynamic Excel spreadsheet matrix.");
+                        e.printStackTrace();
                     }
-
-                    // Row 12: Blank row spacer matching cell width dynamically
-                    for (int col = 0; col < totalParams - 1; col++) {
-                        pw.print(",");
-                    }
-                    pw.println();
-
-                    // Row 13: Pure numeric Averages
-                    for (int col = 0; col < totalParams; col++) {
-                        pw.print(col == 0 ? String.format("%f", columnSums[col] / 10)
-                                : String.format(",%f", columnSums[col] / 10));
-                    }
-                    pw.println();
-
-                    // Row 14: Pure numeric Squared Deviations from unique baselines
-                    for (int col = 0; col < totalParams; col++) {
-                        double msd = columnSumSquaredDeviations[col] / 10;
-                        pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
-                    }
-                    pw.println();
-
-                    System.out.println("Excel file successfully created fresh with exactly 14 rows.");
-
-                    // Clear the cache for clean resets next time main runs
-                    allFileResults.clear();
-
-                } catch (java.io.IOException e) {
-                    System.err.println("Error writing out final dynamic Excel spreadsheet matrix.");
-                    e.printStackTrace();
                 }
             }
-        } else {
-            System.out.println("No valid solution found matching window constraint.");
         }
     }
 
@@ -811,250 +747,23 @@ public class initializeRequiredVectors {
         System.out.println();
     }
 
-    public int[] setUpTheObjectiveComputation(boolean sortWithInsertionsort, float[] error, float fixed_parameter_0, float fixed_parameter_1, float fixed_beta_0, float fixed_beta_1, float fixed_gamma_0, float fixed_gamma_1) {
-
-        //   int n = getNumberOfSamples();
-        int[] indices_of_samples_sorted_by_error1 = new int[numberOfSamples];
-        float rationalValue;
-        if (sortWithInsertionsort) {
-            indices_of_samples_sorted_by_error = insertionSort_indices(error);
-        } else {
-//indices_of_samples_sorted_by_error1 = fillIdenticalArray(indices_of_samples_sorted_by_error1);
-            indices_of_samples_sorted_by_error1 = indexSort(error, true);
-        }
-
-        float numeratorOfObj;
-        int h_1, h_2;
-        for (int lb = 0; lb < 1; lb++) {
-            if (sortWithInsertionsort) {
-                h_1 = indices_of_samples_sorted_by_error[lb];
-            } else {
-                h_1 = indices_of_samples_sorted_by_error1[lb];
-            }
-            int ub = numberOfSamples - 1;
-            numeratorOfObj = maintainedSumOfAllComputedErrorTerms;
-            do {
-                if (sortWithInsertionsort) {
-                    h_2 = indices_of_samples_sorted_by_error[ub];
-                } else {
-                    h_2 = indices_of_samples_sorted_by_error1[ub];
-                }
-                rationalValue = numeratorOfObj / maintainedSumOfAllComputedErrorTerms;
-
-                if (rationalValue < bestValueOfObjectiveFoundSoFar) {
-                    bestValueOfObjectiveFoundSoFar = rationalValue;
-
-                    //   System.out.println("bestValueOfObjectiveFoundSoFar = " + bestValueOfObjectiveFoundSoFar);
-                    //   System.out.println("fixed_parameter_1 = " + fixed_parameter_1);
-                    //    System.out.println();
-                    if (fixed_parameter_0 != bestParam_0SoFar) {
-                        bestParam_0SoFar = fixed_parameter_0;
-                        //     System.out.println("bestParam_0SoFar = " + bestParam_0SoFar);
-                        //   System.out.println();
-                    }
-                    //       if (fixed_parameter_1 == 3.0f)
-                    //         System.out.println("bug");
-                    if (fixed_parameter_1 != bestParam_1SoFar) {
-                        bestParam_1SoFar = fixed_parameter_1;
-                        //     System.out.println("bestParam_1SoFar = " + bestParam_1SoFar);
-                        //      System.out.println();
-                    }
-                    if (h_1 != sampleWithBesth_1SoFar) {
-                        //    System.out.println("sampleWithBesth_1SoFar was: " + sampleWithBesth_1SoFar);
-                        sampleWithBesth_1SoFar = h_1;
-                        //    System.out.println("now it got: " + sampleWithBesth_1SoFar);
-                    }
-                    if (h_2 != sampleWithBesth_2SoFar) {
-                        //    System.out.println("sampleWithBesth_2SoFar was: " + sampleWithBesth_2SoFar);
-                        sampleWithBesth_2SoFar = h_2;
-                        //  System.out.print(" bestAlph_0SoFar now: " + bestAlph_0SoFar + ", ");
-                        //    System.out.print("bestAlph_1SoFar now: " + bestAlph_1SoFar);
-                        //    numberOfOutliers = indices_of_samples_sorted_by_error.length - ub - 1;
-                        //    introducingOutliers(indices_of_samples_sorted_by_error);
-                    }
-                }
-                ub--;
-                numeratorOfObj -= error[ub];
-            } while (ub > 3 * numberOfSamples / 4//       && (ub - lb + 1) >= n
-                    );
-        }
-        if (sortWithInsertionsort) {
-            return indices_of_samples_sorted_by_error;
-        } else {
-            return indices_of_samples_sorted_by_error1;
-        }
-    }
-
-    public int[] setUpTheObjectiveComputation2(boolean sortWithInsertionsort, int numberOfUnknownParameters, float[] error, float[] fixed_parameters) {
-
-        //   int n = getNumberOfSamples();
-        int[] indices_of_samples_sorted_by_error1 = new int[numberOfSamples];
-        float rationalValue;
-        if (sortWithInsertionsort) {
-            indices_of_samples_sorted_by_error = insertionSort_indices(error);
-        } else {
-//indices_of_samples_sorted_by_error1 = fillIdenticalArray(indices_of_samples_sorted_by_error1);
-            indices_of_samples_sorted_by_error1 = indexSort(error, true);
-        }
-        bestParam_iSoFar = new float[numberOfUnknownParameters];
-        float numeratorOfObj;
-        int h_1, h_2;
-        for (int lb = 0; lb < 1; lb++) {
-            if (sortWithInsertionsort) {
-                h_1 = indices_of_samples_sorted_by_error[lb];
-            } else {
-                h_1 = indices_of_samples_sorted_by_error1[lb];
-            }
-            int ub = numberOfSamples - 1;
-            numeratorOfObj = maintainedSumOfAllComputedErrorTerms;
-            do {
-                if (sortWithInsertionsort) {
-                    h_2 = indices_of_samples_sorted_by_error[ub];
-                } else {
-                    h_2 = indices_of_samples_sorted_by_error1[ub];
-                }
-                rationalValue = numeratorOfObj / maintainedSumOfAllComputedErrorTerms;
-
-                if (rationalValue < bestValueOfObjectiveFoundSoFar) {
-                    bestValueOfObjectiveFoundSoFar = rationalValue;
-
-                    //   System.out.println("bestValueOfObjectiveFoundSoFar = " + bestValueOfObjectiveFoundSoFar);
-                    //   System.out.println("fixed_parameter_1 = " + fixed_parameter_1);
-                    //    System.out.println();
-                    for (int q = 0; q < numberOfUnknownParameters; q++) {
-                        if (fixed_parameters[q] != bestParam_iSoFar[q]) {
-                            bestParam_iSoFar[q] = fixed_parameters[q];
-                            //     System.out.println("bestParam_0SoFar = " + bestParam_0SoFar);
-                            //   System.out.println();
-                        }
-                    }
-
-                    if (h_1 != sampleWithBesth_1SoFar) {
-                        //    System.out.println("sampleWithBesth_1SoFar was: " + sampleWithBesth_1SoFar);
-                        sampleWithBesth_1SoFar = h_1;
-                        //    System.out.println("now it got: " + sampleWithBesth_1SoFar);
-                    }
-                    if (h_2 != sampleWithBesth_2SoFar) {
-                        //    System.out.println("sampleWithBesth_2SoFar was: " + sampleWithBesth_2SoFar);
-                        sampleWithBesth_2SoFar = h_2;
-                        //  System.out.print(" bestAlph_0SoFar now: " + bestAlph_0SoFar + ", ");
-                        //    System.out.print("bestAlph_1SoFar now: " + bestAlph_1SoFar);
-                        //    numberOfOutliers = indices_of_samples_sorted_by_error.length - ub - 1;
-                        //    introducingOutliers(indices_of_samples_sorted_by_error);
-                    }
-                }
-                ub--;
-                numeratorOfObj -= error[ub];
-            } while (ub > 3 * numberOfSamples / 4//       && (ub - lb + 1) >= n
-                    );
-        }
-        if (sortWithInsertionsort) {
-            return indices_of_samples_sorted_by_error;
-        } else {
-            return indices_of_samples_sorted_by_error1;
-        }
-    }
-
-    public int[] arrayOfOutlierSamples(int[] indices_of_samples_sorted_by_error1, boolean sortWithInsertionsort, int whichPar
-    ) {
-        //    int n = getNumberOfSamples();
-        float[] tableOf_column_yMinusParameter_0s;
-        tableOf_column_yMinusParameter_0s = new float[numberOfSamples];
-        float[] thisError = new float[numberOfSamples];
-        for (int o = 0; o < numberOfSamples; o++) {
-            tableOf_column_yMinusParameter_0s[o] = matrixOfData[o][whichPar + 1] - bestParam_0SoFar;
-        }
-        for (int o = 0; o < numberOfSamples; o++) {
-            //   if (!solveOverLeftCenter && solveOverCenter && !solveOverRightCenter) {
-            thisError[o] = Math.abs(tableOf_column_yMinusParameter_0s[o] - bestParam_1SoFar * matrixOfData[o][1]);
-            //  } else {
-            // thisError[o] = Math.abs(tableOf_column_yMinusParameter_0s[o] - bestAlph_1SoFar * matrixOfData[o][1]) + coefficientOfSecondErrorTerm * Math.abs(tableOf_column_lMinusBetta_0s[o] - bestBeta_1SoFar * matrixOfData[o][1]) + coefficientOfThirdErrorTerm * Math.abs(tableOf_column_rMinusGamma_0s[o] - bestGamma_1SoFar * matrixOfData[o][1]);
-            //  }
-        }
-        int tempBound = 0;
-        fillIdenticalArray(indices_of_samples_sorted_by_error);
-        insertionSort_indices(thisError);
-        for (int o = 0; o < numberOfSamples; o++) {
-            if (indices_of_samples_sorted_by_error1[o] == sampleWithBesth_2SoFar) {
-                tempBound = o;
-                break;
-            }
-        }
-        int[] arrayOfOutliers = new int[numberOfSamples - tempBound - 1];
-        for (int y = 0; y < arrayOfOutliers.length; y++) {
-            arrayOfOutliers[y] = indices_of_samples_sorted_by_error1[tempBound++];
-        }
-        return arrayOfOutliers;
-    }
-
-    public void addParameter_0ToTheErrorTerm(float fixed_something_0) {
-        //    int n = getNumberOfSamples();
-        for (int w = 0; w < numberOfSamples; w++) {
-            errorTerm[w] -= fixed_something_0;
-            maintainedSumOfAllComputedErrorTerms += errorTerm[w];
-        }
-    }
-
-    public void substractParameter_0FromTheErrorTerm(int whichColumn, float fixed_something_0) {
-        //    int n = getNumberOfSamples();
-        for (int w = 0; w < numberOfSamples; w++) {
-            errorTerm[w] += fixed_something_0;
-        }
-    }
-
     public float[] fillInAnArrayWithCoefficient(int whichColumn, float fixed_something_0) {
         //    int n = getNumberOfSamples();
 
-        float[] tableOf_column_something_MinusParameter_0s = new float[numberOfSamples];
-        for (int w = 0; w < numberOfSamples; w++) {
+        float[] tableOf_column_something_MinusParameter_0s = new float[numberOfSamplesPerDataFile];
+        for (int w = 0; w < numberOfSamplesPerDataFile; w++) {
             tableOf_column_something_MinusParameter_0s[w] = matrixOfData[w][whichColumn] - fixed_something_0;
         }
         return tableOf_column_something_MinusParameter_0s;
     }
 
     public int[] fillIdenticalArray(int[] a) {
-        for (int r = 0; r < numberOfSamples; r++) {
+        for (int r = 0; r < numberOfSamplesPerDataFile; r++) {
             a[r] = r;
         }
         return a;
     }
 
-    public int[] insertionSort_indices(float[] error) {
-        for (int i = 1; i < numberOfSamples; i++) {
-            int v = indices_of_samples_sorted_by_error[i];
-            int j = i - 1;
-            while (j >= 0 && error[indices_of_samples_sorted_by_error[j]] > error[v]) {
-                indices_of_samples_sorted_by_error[j + 1] = indices_of_samples_sorted_by_error[j];
-                j--;
-            }
-            indices_of_samples_sorted_by_error[j + 1] = v;
-        }
-        return indices_of_samples_sorted_by_error;
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    public static void insertionSortWithComparator(Integer[] a, Comparator c) {
-        for (int i = 0; i < a.length - 1; i++) {
-            Integer v = a[i];
-            int j;
-            for (j = i - 1; j >= 0; j--) {
-                if (c.compare(a[j], v) <= 0) {
-                    break;
-                }
-                a[j + 1] = a[j];
-            }
-            a[j + 1] = v;
-        }
-    }
-
-//    public void solveAllPossibleMutualSystems(boolean sortWithInsertionsort) {
-//
-//        int whichParameter;
-//
-//        whichParameter = 1;
-//        solveAllEquationsAndSetup(1, 2, whichParameter);
-//
-//    }
     public List<List<Float>> establishTheSystemOfEquationsAndSolve20(int experimentNumber, int numberOfUnknownParameters, int dimensionOfRightvestorInDataFile) {
 
         // =====================================================
@@ -1136,7 +845,7 @@ public class initializeRequiredVectors {
             // =================================================
             int pos = numberOfUnknownParameters - 1;
 
-            while (pos >= 0 && comb[pos] == numberOfSamples - numberOfUnknownParameters + pos) {
+            while (pos >= 0 && comb[pos] == numberOfSamplesPerDataFile - numberOfUnknownParameters + pos) {
                 pos--;
             }
 
@@ -1279,7 +988,7 @@ public class initializeRequiredVectors {
             int pos = numberOfUnknownParameters - 1;
 
             while (pos >= 0
-                    && comb[pos] == numberOfSamples - numberOfUnknownParameters + pos) {
+                    && comb[pos] == numberOfSamplesPerDataFile - numberOfUnknownParameters + pos) {
 
                 pos--;
             }
@@ -1386,7 +1095,7 @@ public class initializeRequiredVectors {
             // =================================================
             int pos = numberOfUnknownParameters - 1;
 
-            while (pos >= 0 && comb[pos] == numberOfSamples - numberOfUnknownParameters + pos) {
+            while (pos >= 0 && comb[pos] == numberOfSamplesPerDataFile - numberOfUnknownParameters + pos) {
                 pos--;
             }
 
@@ -1405,11 +1114,10 @@ public class initializeRequiredVectors {
         // NATIVE IN-PLACE SORTING BEFORE RETURN
         // =====================================================
         // Sort each parameter track cleanly using high-speed native Timsort loops
-        for (int p = 0; p < numberOfUnknownParameters; p++) {
-            java.util.Collections.sort(sortedParameters.get(p));
-        }
+        //    for (int p = 0; p < numberOfUnknownParameters; p++) {
+        //    java.util.Collections.sort(sortedParameters.get(p));
+        //    }
         //why would we ever sort here?
-
         if (experimentNumber == 1) {
             switch (dimensionOfRightvestorInDataFile) {
                 case 2 ->
@@ -1498,20 +1206,6 @@ public class initializeRequiredVectors {
 
         return sortedParameters;
 
-    }
-
-    static class ErrorSample {
-
-        float error;
-
-        int sampleIndex;
-
-        ErrorSample(float error,
-                int sampleIndex) {
-
-            this.error = error;
-            this.sampleIndex = sampleIndex;
-        }
     }
 
 }

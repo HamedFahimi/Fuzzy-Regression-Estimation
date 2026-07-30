@@ -35,11 +35,11 @@ public class TT2 {
             NumberOfSamples = 20;
             numberOfKnownParameters = 5;
             numberOfUnknownParameters = 2;
-            centralAlpha_0Fixed = 10f;
-            centralAlpha_1Fixed = 3f;
-            centralBeta_0Fixed = -15f;
+            centralAlpha_0Fixed = 10.0f;
+            centralAlpha_1Fixed = 3.0f;
+            centralBeta_0Fixed = -15.0f;
             centralBeta_1Fixed = 0.1f;
-            centralGamma_0Fixed = -40f;
+            centralGamma_0Fixed = -40.0f;
             centralGamma_1Fixed = 0.2f;
         } else {
             NumberOfSamples = 10;
@@ -69,12 +69,11 @@ public class TT2 {
     public static void main(String[] args) throws IOException {
         int experimentNumber = 1;
         TT2 A = new TT2(experimentNumber);
-       generateDataDependingOnTheExperiment(experimentNumber);
         A.launchTheEntireExperiment(experimentNumber);
     }
 
     public void launchTheEntireExperiment(int experimentNumber) throws FileNotFoundException, IOException {
-
+        generateDataDependingOnTheExperiment(experimentNumber);
         String dataName;
         for (int r = 0; r < NUMBER_OF_GENERATED_INSTANCES; r++) {
             dataName = "generatedData" + r + ".xls";
