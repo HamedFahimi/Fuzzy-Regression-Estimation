@@ -3,13 +3,14 @@ package fuzzyregressionestimation;
 import static fuzzyregressionestimation.initializeRequiredVectors.establishTheSystemOfEquationsAndSolve2;
 import java.io.*;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class TT2 {
 
-    private static int NumberOfSamples; // = NumberOfRowsOfDataFile
+    private static int numberOfSamples; // = NumberOfRowsOfDataFile
     private final int numberOfUnknownParameters; //i.e. number of Alpha_i's (Beta_is, Gamma_i's)
     private final int numberOfKnownParameters;
-    private static final int NUMBER_OF_GENERATED_INSTANCES = 10;
+    private static int NUMBER_OF_GENERATED_INSTANCES;
     static float[] fileBestParams;
     public static float centralAlpha_0Fixed;
     public static float centralAlpha_1Fixed;
@@ -30,9 +31,10 @@ public class TT2 {
     public static float centralGamma_4Fixed;
     public static float centralGamma_5Fixed;
 
-    public TT2(int experimentNumber) {
+    public TT2(int experimentNumber, int numberOfSamples, int numberOfDataFiles) {
+        TT2.numberOfSamples = numberOfSamples;
+        TT2.NUMBER_OF_GENERATED_INSTANCES = numberOfDataFiles;
         if (experimentNumber == 1) {
-            NumberOfSamples = 20;
             numberOfKnownParameters = 5;
             numberOfUnknownParameters = 2;
             centralAlpha_0Fixed = 10.0f;
@@ -42,7 +44,6 @@ public class TT2 {
             centralGamma_0Fixed = -40.0f;
             centralGamma_1Fixed = 0.2f;
         } else {
-            NumberOfSamples = 10;
             numberOfKnownParameters = 9;
             numberOfUnknownParameters = 6;
             centralAlpha_0Fixed = 1.0f;
@@ -67,8 +68,17 @@ public class TT2 {
     }
 
     public static void main(String[] args) throws IOException {
-        int experimentNumber = 1;
-        TT2 A = new TT2(experimentNumber);
+        String directory = Config.getDirectory();   // Your output directory
+        deletedEveryExistingExcelFileInTheDirectory(directory);
+        // Now generate your new Excel files...
+        Scanner input = new Scanner(System.in);
+        System.out.println("How many samples per data file is desired?");
+        int m = input.nextInt();
+        System.out.println("How many data files would you like to be generated?");
+        int o = input.nextInt();
+        System.out.println("Which experiment would you like to launch?");
+        int experimentNumber = input.nextInt();
+        TT2 A = new TT2(experimentNumber, m, o);
         A.launchTheEntireExperiment(experimentNumber);
     }
 
@@ -84,7 +94,7 @@ public class TT2 {
 
     public void runExperimentsOverThisData(String dataName, int experimentNumber) {
         //initialize the required data structures
-        initializeRequiredVectors X = new initializeRequiredVectors(NumberOfSamples, numberOfKnownParameters, experimentNumber);
+        initializeRequiredVectors X = new initializeRequiredVectors(numberOfSamples, numberOfKnownParameters, NUMBER_OF_GENERATED_INSTANCES, experimentNumber);
         try {
             if (experimentNumber == 1) {
                 X.developTheMatrixOfData(dataName, experimentNumber);
@@ -221,13 +231,33 @@ public class TT2 {
         if (experimentNumber == 1) {
             CreateDataInExcelFile2Parameters L1 = new CreateDataInExcelFile2Parameters();
             for (int q = 0; q < NUMBER_OF_GENERATED_INSTANCES; q++) {
-                L1.generateDataOfExperiment1(q, NumberOfSamples);
+                L1.generateDataOfExperiment1(q, numberOfSamples);
             }
         } else if (experimentNumber == 2) {
             CreateDataInExcelFile5Parameters L2 = new CreateDataInExcelFile5Parameters();
             for (int q = 0; q < NUMBER_OF_GENERATED_INSTANCES; q++) {
-                int numberOfOkSamples = (int) (0.9 * NumberOfSamples);
-                L2.generateDataOfExperiment2(q, NumberOfSamples, numberOfOkSamples);
+                int numberOfOkSamples = (int) (0.9 * numberOfSamples);
+                L2.generateDataOfExperiment2(q, numberOfSamples, numberOfOkSamples);
+            }
+        }
+    }
+
+    public static void deletedEveryExistingExcelFileInTheDirectory(String directory) {
+        File folder = new File(directory);
+
+        File[] files = folder.listFiles((dir, name)
+                -> name.toLowerCase().endsWith(".xls")
+                || name.toLowerCase().endsWith(".xls")
+                || name.toLowerCase().endsWith(".csv"));
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.delete()) {
+                    System.out.println("Deleted: " + file.getName());
+                } else {
+                    System.out.println("Could not delete: " + file.getName());
+                }
+
             }
         }
     }

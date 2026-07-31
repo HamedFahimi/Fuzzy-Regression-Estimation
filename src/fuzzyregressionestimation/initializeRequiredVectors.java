@@ -34,11 +34,12 @@ public class initializeRequiredVectors {
     private static List<List<Float>> betaSortedParameters;
     private static List<List<Float>> gammaSortedParameters;
     static float[][] matrixOfData;
-    private static final int NUMBER_OF_GENERATED_INSTANCES = 10;
+    private final int NUMBER_OF_GENERATED_INSTANCES;
 
     //the name of this method looks inconvenient. Later change it to something like initializeExperiment ...
-    public initializeRequiredVectors(int n, int numberOfKnownParameters, int experimentNumber) {
+    public initializeRequiredVectors(int n, int numberOfKnownParameters, int NUMBER_OF_GENERATED_INSTANCES, int experimentNumber) {
         numberOfSamplesPerDataFile = n;
+        this.NUMBER_OF_GENERATED_INSTANCES = NUMBER_OF_GENERATED_INSTANCES;
         if (experimentNumber == 1) {
             matrixOfData = new float[n][numberOfKnownParameters];
             centralAlphas = new float[2];
@@ -81,7 +82,7 @@ public class initializeRequiredVectors {
         }
         i = 0;
         int j;
-        FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName));
+        FileInputStream fis = new FileInputStream(new File(Config.getDirectory() + dataName));
         HSSFWorkbook wb = new HSSFWorkbook(fis);
         HSSFSheet sheet = wb.getSheetAt(0);
         for (Row row : sheet) {
@@ -94,72 +95,10 @@ public class initializeRequiredVectors {
         }
     }
 
-    public float[][] developTheMatrixOfData2(String dataName, int numberOfParameters) throws FileNotFoundException, IOException {
-        int rowIndex = 0;
-        int totalExcelColumns = 0;
-
-        // First, determine total columns in Excel file
-        try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
-
-            HSSFSheet sheet = wb.getSheetAt(0);
-            Row firstRow = sheet.getRow(0);
-            totalExcelColumns = firstRow.getLastCellNum();
-        }
-
-        // Determine how many columns to read from Excel (EXCLUDING column 0)
-        int dataColumnsToRead;
-        if (numberOfParameters == 2) {
-            // Excel has 5 columns total: col0=1s, col1-4=data
-            // Read ALL data columns: col1, col2, col3, col4 (4 columns)
-            dataColumnsToRead = totalExcelColumns - 1; // = 4
-        } else if (numberOfParameters == 6) {
-            // Excel has 9 columns total: col0=1s, col1-8=data (col8 is duplicate)
-            // Read data columns: col1 through col7 (7 columns), skip col8
-            dataColumnsToRead = totalExcelColumns - 2; // = 7 (skip col0 and col8)
-        } else {
-            // Default: skip column 0 and last column
-            dataColumnsToRead = totalExcelColumns - 2;
-        }
-
-        // Initialize matrix: column 0 = 1s, then data columns
-        matrixOfData = new float[numberOfSamplesPerDataFile][1 + dataColumnsToRead];
-
-        // Initialize first column with 1.0f for all rows
-        for (rowIndex = 0; rowIndex < numberOfSamplesPerDataFile; rowIndex++) {
-            matrixOfData[rowIndex][0] = 1.0f;
-        }
-
-        // Reset row index for reading Excel
-        rowIndex = 0;
-
-        try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
-
-            HSSFSheet sheet = wb.getSheetAt(0);
-
-            for (Row row : sheet) {
-                // Read from Excel column 1 onwards (skip column 0 which has 1s)
-                for (int excelCol = 1; excelCol <= dataColumnsToRead; excelCol++) {
-                    Cell cell = row.getCell(excelCol);
-                    if (cell != null) {
-                        // Matrix column = excelCol (since column 0 is the "1" constant)
-                        matrixOfData[rowIndex][excelCol] = truncate((float) cell.getNumericCellValue(), 2);
-                    }
-                }
-
-                rowIndex++;
-                if (rowIndex >= numberOfSamplesPerDataFile) {
-                    break;
-                }
-            }
-        }
-
-        return matrixOfData;
-    }
-
     public void developTheMatrixOfData3(String dataName) throws FileNotFoundException, IOException {
         int rowIndex = 0;
 
-        try (FileInputStream fis = new FileInputStream(new File("C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\" + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
+        try (FileInputStream fis = new FileInputStream(new File(Config.getDirectory() + dataName)); HSSFWorkbook wb = new HSSFWorkbook(fis)) {
 
             HSSFSheet sheet = wb.getSheetAt(0);
 
@@ -193,231 +132,6 @@ public class initializeRequiredVectors {
         List<float[]> allOneOfAlphaOrBetaOrGammaSolutions = establishTheSystemOfEquationsAndSolve(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
         //    List<List<Float>> allOneOfAlphaOrBetaOrGammaSolutions2 = establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, dimensionOfRightvestorInDataFile);
         organizeAllSolutionsInASortedList(experimentNumber, numberOfUnknownParameters, allOneOfAlphaOrBetaOrGammaSolutions, dimensionOfRightvestorInDataFile);
-    }
-
-    public void findGlobalMinimumOOptimized(int experimentNumber) {
-        int N = matrixOfData.length;
-        if (N == 0) {
-            return;
-        }
-
-        int M = matrixOfData[0].length;
-        int numX;
-        numX = M - 3; // K parameters per group
-        if (experimentNumber == 2) {
-            numX++;
-        }
-        int h1Max = N / 4;
-        int h2Start = (3 * N) / 4;
-        int minWindowSize = N / 2;
-
-        double globalMinO = Double.MAX_VALUE;
-        int bestH1 = -1, bestH2 = -1, bestSolIdx = -1;
-
-        int numSolutions = alphaSortedParameters.get(0).size();
-
-        float[] currentAlphas = new float[numX];
-        float[] currentBetas = new float[numX];
-        float[] currentGammas = new float[numX];
-
-        for (int s = 0; s < numSolutions; s++) {
-            for (int j = 0; j < numX; j++) {
-                currentAlphas[j] = alphaSortedParameters.get(j).get(s);
-                currentBetas[j] = betaSortedParameters.get(j).get(s);
-                currentGammas[j] = gammaSortedParameters.get(j).get(s);
-            }
-//            if (experimentNumber == 1) {
-//                for (int j = 0; j < numX; j++) {
-//                    currentGammas[j] = gammaSortedParameters.get(j).get(s);
-//                }
-//            }
-            //   double[] E = new double[N];
-//            double[] prefixSum = new double[N + 1];
-//            prefixSum[0] = 0;
-
-// 1. Calculate the Error vector and pair it with its original index
-            double[][] E = new double[N][2];
-            for (int i = 0; i < N; i++) {
-                float sumAlphaX = 0, sumBetaX = 0, sumGammaX = 0;
-                float[] row = matrixOfData[i];
-
-                for (int j = 0; j < numX; j++) {
-                    float xVal = row[j];
-                    sumAlphaX += currentAlphas[j] * xVal;
-                    sumBetaX += currentBetas[j] * xVal;
-                    sumGammaX += currentGammas[j] * xVal;
-                }
-
-                // Store the error value
-                if (experimentNumber == 1) {
-                    E[i][0] = Math.abs(row[M - 3] - sumAlphaX)
-                            + 0.5 * Math.abs(row[M - 2] - sumBetaX)
-                            + 0.5 * Math.abs(row[M - 1] - sumGammaX);
-                } else if (experimentNumber == 2) {
-                    E[i][0] = Math.abs(row[M - 2] - sumAlphaX)
-                            + 2 * 0.5 * Math.abs(row[M - 1] - sumBetaX);
-                }
-                // Store the original task/row index!
-                E[i][1] = i;
-            }
-
-            // 2. SORT BY ERROR VALUE (Column 0), keeping original indices (Column 1) intact
-            java.util.Arrays.sort(E, (a, b) -> Double.compare(a[0], b[1] == b[1] ? a[0] : b[0]));
-            // Alternative standard way:
-            java.util.Arrays.sort(E, java.util.Comparator.comparingDouble(a -> a[0]));
-
-            // 3. Create Prefix Sums based on the SORTED error values
-            double[] prefixSum = new double[N + 1];
-            prefixSum[0] = 0;
-            for (int i = 0; i < N; i++) {
-                prefixSum[i + 1] = prefixSum[i] + E[i][0]; // Using sorted error value
-            }
-
-            double totalSumE = prefixSum[N];
-            if (totalSumE < 1e-12) {
-                continue;
-            }
-
-            // 4. Iterate through windows on the sorted positions
-            for (int h1 = 0; h1 < h1Max; h1++) {
-                for (int h2 = h2Start - 1; h2 < N; h2++) {
-                    int currentWindowSize = h2 - h1 + 1;
-                    if (currentWindowSize < minWindowSize) {
-                        continue;
-                    }
-
-                    // Your exact formula: Sigma from h1 to h2 over total Sigma
-                    double numerator = prefixSum[h2 + 1] - prefixSum[h1];
-                    double currentO = numerator / totalSumE;
-
-                    if (currentO < globalMinO) {
-                        globalMinO = currentO;
-                        bestSolIdx = s;
-
-                        // Now you can track exactly which original tasks made up this best window!
-                        // For any index 'k' between h1 and h2:
-                        // int originalTaskIndex = (int) E[k][1];
-                    }
-                }
-            }
-        }
-
-        // =========================================================================
-        // MEMORY-COLLECTOR & SINGLE-SHOT DYNAMIC WRITE ACTION
-        // =========================================================================
-        if (bestSolIdx != -1) {
-            int K = numX; // Dynamic number of parameters per group
-            int totalParams = 3 * K;
-
-            // Extract all dynamic winning parameters into one row array
-            float[] currentResult = new float[totalParams];
-            int pIdx = 0;
-
-            for (int j = 0; j < K; j++) {
-                currentResult[pIdx++] = alphaSortedParameters.get(j).get(bestSolIdx);
-            }
-            for (int j = 0; j < K; j++) {
-                currentResult[pIdx++] = betaSortedParameters.get(j).get(bestSolIdx);
-            }
-            for (int j = 0; j < K; j++) {
-                currentResult[pIdx++] = gammaSortedParameters.get(j).get(bestSolIdx);
-            }
-
-            // Save row to memory list
-            allFileResults.add(currentResult);
-
-            // Process file generation on the 10th result load
-            if (allFileResults.size() == 10) {
-                String filename = "OptimizationResults.csv";
-                java.io.File file = new java.io.File(filename);
-
-                // Stitch together your pre-determined, unique baseline lists
-                double[] centralBaselines = new double[totalParams];
-                int bIdx = 0;
-
-                for (int j = 0; j < K; j++) {
-                    centralBaselines[bIdx++] = centralAlphas[j]; // Match to alpha0, alpha1...
-                }
-                for (int j = 0; j < K; j++) {
-                    centralBaselines[bIdx++] = centralBetas[j];  // Match to beta0, beta1...
-                }
-                for (int j = 0; j < K; j++) {
-                    centralBaselines[bIdx++] = centralGammas[j]; // Match to gamma0, gamma1...
-                }
-
-                double[] columnSums = new double[totalParams];
-                double[] columnSumSquaredDeviations = new double[totalParams];
-
-                // Overwrite old file execution completely
-                try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
-
-                    // Row 1: Generate Dynamic CSV Labels
-                    StringBuilder sbHeaders = new StringBuilder();
-                    for (int j = 0; j < K; j++) {
-                        sbHeaders.append("alpha").append(j).append(",");
-                    }
-                    for (int j = 0; j < K; j++) {
-                        sbHeaders.append("beta").append(j).append(",");
-                    }
-                    for (int j = 0; j < K; j++) {
-                        sbHeaders.append("gamma").append(j);
-                        if (j < K - 1) {
-                            sbHeaders.append(",");
-                        }
-                    }
-                    pw.println(sbHeaders.toString());
-
-                    // Rows 2 to 11: The exact 10 data rows from memory
-                    for (float[] rowParams : allFileResults) {
-                        for (int col = 0; col < totalParams; col++) {
-                            pw.printf("%f", rowParams[col]);
-                            if (col < totalParams - 1) {
-                                pw.print(",");
-                            }
-
-                            double val = rowParams[col];
-                            columnSums[col] += val;
-
-                            // Deviation calculation using unique individual parameter centers
-                            double deviation = val - centralBaselines[col];
-                            columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
-                        }
-                        pw.println();
-                    }
-
-                    // Row 12: Blank row spacer matching cell width dynamically
-                    for (int col = 0; col < totalParams - 1; col++) {
-                        pw.print(",");
-                    }
-                    pw.println();
-
-                    // Row 13: Pure numeric Averages
-                    for (int col = 0; col < totalParams; col++) {
-                        pw.print(col == 0 ? String.format("%f", columnSums[col] / 10)
-                                : String.format(",%f", columnSums[col] / 10));
-                    }
-                    pw.println();
-
-                    // Row 14: Pure numeric Squared Deviations from unique baselines
-                    for (int col = 0; col < totalParams; col++) {
-                        double msd = columnSumSquaredDeviations[col] / 10;
-                        pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
-                    }
-                    pw.println();
-
-                    System.out.println("Excel file successfully created fresh with exactly 14 rows.");
-
-                    // Clear the cache for clean resets next time main runs
-                    allFileResults.clear();
-
-                } catch (java.io.IOException e) {
-                    System.err.println("Error writing out final dynamic Excel spreadsheet matrix.");
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            System.out.println("No valid solution found matching window constraint.");
-        }
     }
 
     public void findGlobalMinimumOOptimized2(int experimentNumber) {
@@ -454,11 +168,10 @@ public class initializeRequiredVectors {
             }
 
             double[] E = new double[N];
-    //        double[] prefixSum = new double[N + 1];
+            //        double[] prefixSum = new double[N + 1];
             double[] prefixSum2 = new double[N];
 
-      //      prefixSum[0] = 0;
-
+            //      prefixSum[0] = 0;
 // First, compute E values for all i
             // float[] E = new float[N];
             for (int i = 0; i < N; i++) {
@@ -469,7 +182,13 @@ public class initializeRequiredVectors {
                     float xVal = row[j];
                     sumAlphaX += currentAlphas[j] * xVal;
                     sumBetaX += currentBetas[j] * xVal;
-                    sumGammaX += currentGammas[j] * xVal;
+                //    sumGammaX += currentGammas[j] * xVal;
+                }
+                if (experimentNumber == 1) {
+                    for (int j = 0; j < numX; j++) {
+                        float xVal = row[j];
+                        sumGammaX += currentGammas[j] * xVal;
+                    }
                 }
 
                 if (experimentNumber == 1) {
@@ -478,8 +197,7 @@ public class initializeRequiredVectors {
                             + 0.5 * Math.abs(row[numX + 2] - sumGammaX));
                 } else {
                     E[i] = (float) (Math.abs(row[numX] - sumAlphaX)
-                            + 0.5 * Math.abs(row[numX + 1] - sumBetaX)
-                            + 0.5 * Math.abs(row[numX + 1] - sumGammaX));
+                            + Math.abs(row[numX + 1] - sumBetaX));
                 }
             }
 
@@ -488,6 +206,8 @@ public class initializeRequiredVectors {
             for (int i = 0; i < N; i++) {
                 sortedIndices[i] = i;
             }
+           // for (int i = 0; i < N; i++)
+              //  System.out.println(E[i]);
             Arrays.sort(sortedIndices, Comparator.comparingDouble(i -> E[i]));
 
 // Build prefixSum based on SORTED E
@@ -498,7 +218,7 @@ public class initializeRequiredVectors {
             for (int idx = 0; idx < N; idx++) {
                 int originalIndex = sortedIndices[idx];
                 sortedE[idx] = (float) E[originalIndex];
-             //   prefixSum[idx + 1] = prefixSum[idx] + sortedE[idx];
+                //   prefixSum[idx + 1] = prefixSum[idx] + sortedE[idx];
 
                 if (idx == 0) {
                     prefixSum2[idx] = sortedE[idx];
@@ -514,14 +234,14 @@ public class initializeRequiredVectors {
             }
 
 // IMPORTANT: h1 and h2 now refer to positions in the SORTED array
-            for (int h1 = 0; h1 < h1Max; h1++) {
+            for (int h1 = 0; h1 < Math.ceil(N / 4.0) - 1; h1++) {
                 for (int h2 = h2Start; h2 < N; h2++) {
                     int currentWindowSize = h2 - h1 + 1;
                     if (currentWindowSize < N / 2.0) {
                         continue;
                     }
 
-                //    double numerator = prefixSum[h2 + 1] - prefixSum[h1];
+                    //    double numerator = prefixSum[h2 + 1] - prefixSum[h1];
                     double numerator;
                     if (h1 == 0) {
                         numerator = prefixSum2[h2];
@@ -634,14 +354,14 @@ public class initializeRequiredVectors {
 
                         // Row 13: Pure numeric Averages
                         for (int col = 0; col < totalParams; col++) {
-                            pw.print(col == 0 ? String.format("%f", columnSums[col] / 10)
-                                    : String.format(",%f", columnSums[col] / 10));
+                            pw.print(col == 0 ? String.format("%f", columnSums[col] / NUMBER_OF_GENERATED_INSTANCES)
+                                    : String.format(",%f", columnSums[col] / NUMBER_OF_GENERATED_INSTANCES));
                         }
                         pw.println();
 
                         // Row 14: Pure numeric Squared Deviations from unique baselines
                         for (int col = 0; col < totalParams; col++) {
-                            double msd = columnSumSquaredDeviations[col] / 10;
+                            double msd = columnSumSquaredDeviations[col] / NUMBER_OF_GENERATED_INSTANCES;
                             pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
                         }
                         pw.println();
