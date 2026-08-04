@@ -68,9 +68,8 @@ public class TT2 {
     }
 
     public static void main(String[] args) throws IOException {
-        String directory = Config.getDirectory();   // Your output directory
+    /*    String directory = Config.getDirectory();
         deletedEveryExistingExcelFileInTheDirectory(directory);
-        // Now generate your new Excel files...
         Scanner input = new Scanner(System.in);
         System.out.println("How many samples per data file is desired?");
         int m = input.nextInt();
@@ -80,10 +79,13 @@ public class TT2 {
         int experimentNumber = input.nextInt();
         TT2 A = new TT2(experimentNumber, m, o);
         A.launchTheEntireExperiment(experimentNumber);
+*/
+        TT2 A = new TT2(1, 10, 10);
+        A.launchTheEntireExperiment(1);
     }
 
     public void launchTheEntireExperiment(int experimentNumber) throws FileNotFoundException, IOException {
-        generateDataDependingOnTheExperiment(experimentNumber);
+            generateDataDependingOnTheExperiment(experimentNumber);
         String dataName;
         for (int r = 0; r < NUMBER_OF_GENERATED_INSTANCES; r++) {
             dataName = "generatedData" + r + ".xls";
@@ -245,7 +247,8 @@ public class TT2 {
     public static void deletedEveryExistingExcelFileInTheDirectory(String directory) {
         File folder = new File(directory);
 
-        File[] files = folder.listFiles((dir, name)
+        File[] files = 
+                folder.listFiles((dir, name)
                 -> name.toLowerCase().endsWith(".xls")
                 || name.toLowerCase().endsWith(".xls")
                 || name.toLowerCase().endsWith(".csv"));
@@ -260,5 +263,10 @@ public class TT2 {
 
             }
         }
+        
     }
+
+//    public static void initializeTheSettingOfData() {
+//        
+//    }
 }

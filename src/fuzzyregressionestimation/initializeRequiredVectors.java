@@ -51,14 +51,12 @@ public class initializeRequiredVectors {
             centralBetas[1] = 0.1f;
             centralGammas[0] = -40.0f;
             centralGammas[1] = 0.2f;
-
         } else if (experimentNumber == 2) {
             matrixOfData = new float[n][numberOfKnownParameters - 1];
             //I substract 1, because the last two columns
             //in this case are identical
             centralAlphas = new float[numberOfKnownParameters];
             centralBetas = new float[numberOfKnownParameters];
-            centralGammas = new float[numberOfKnownParameters];
             centralAlphas[0] = 1.0f;
             centralAlphas[1] = 1.0f;
             centralAlphas[2] = 1.0f;
@@ -182,7 +180,7 @@ public class initializeRequiredVectors {
                     float xVal = row[j];
                     sumAlphaX += currentAlphas[j] * xVal;
                     sumBetaX += currentBetas[j] * xVal;
-                //    sumGammaX += currentGammas[j] * xVal;
+                    //    sumGammaX += currentGammas[j] * xVal;
                 }
                 if (experimentNumber == 1) {
                     for (int j = 0; j < numX; j++) {
@@ -206,8 +204,8 @@ public class initializeRequiredVectors {
             for (int i = 0; i < N; i++) {
                 sortedIndices[i] = i;
             }
-           // for (int i = 0; i < N; i++)
-              //  System.out.println(E[i]);
+            // for (int i = 0; i < N; i++)
+            //  System.out.println(E[i]);
             Arrays.sort(sortedIndices, Comparator.comparingDouble(i -> E[i]));
 
 // Build prefixSum based on SORTED E
@@ -302,10 +300,11 @@ public class initializeRequiredVectors {
                     for (int j = 0; j < K; j++) {
                         centralBaselines[bIdx++] = centralBetas[j];  // Match to beta0, beta1...
                     }
-                    for (int j = 0; j < K; j++) {
-                        centralBaselines[bIdx++] = centralGammas[j]; // Match to gamma0, gamma1...
+                    if (experimentNumber == 1) {
+                        for (int j = 0; j < K; j++) {
+                            centralBaselines[bIdx++] = centralGammas[j]; // Match to gamma0, gamma1...
+                        }
                     }
-
                     double[] columnSums = new double[totalParams];
                     double[] columnSumSquaredDeviations = new double[totalParams];
 
@@ -482,114 +481,6 @@ public class initializeRequiredVectors {
             a[r] = r;
         }
         return a;
-    }
-
-    public List<List<Float>> establishTheSystemOfEquationsAndSolve20(int experimentNumber, int numberOfUnknownParameters, int dimensionOfRightvestorInDataFile) {
-
-        // =====================================================
-        // ONE-SHOT CONFIGURATION: INITIALIZE TARGET PARAMETER TRACKS
-        // =====================================================
-        // This replaces 'allOneOfAlphaOrBetaOrGammaSolutions'. 
-        // It creates a row container for each individual parameter group.
-        List<List<Float>> sortedParameters = new ArrayList<>(numberOfUnknownParameters);
-        for (int i = 0; i < numberOfUnknownParameters; i++) {
-            sortedParameters.add(new ArrayList<>());
-        }
-
-        // =====================================================
-        // INITIAL COMBINATION & TRACKING CACHE
-        // =====================================================
-        int[] comb = new int[numberOfUnknownParameters];
-        int[] lastUsedRowIndex = new int[numberOfUnknownParameters];
-
-        for (int i = 0; i < numberOfUnknownParameters; i++) {
-            comb[i] = i;
-            lastUsedRowIndex[i] = -1;
-        }
-
-        // =====================================================
-        // PERSISTENT SYSTEM MATRICES (DOUBLE-BASED AS ORIGINAL)
-        // =====================================================
-        double[][] A = new double[numberOfUnknownParameters][numberOfUnknownParameters];
-        double[] B = new double[numberOfUnknownParameters];
-        float[] solution;
-
-        // OPTIMIZATION: Set the first column entries to 1.0 EXACTLY ONCE
-        for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
-            A[eq][0] = 1.0;
-        }
-
-        while (true) {
-
-            // =================================================
-            // BUILD A AND B (WITH FIRST COLUMN SKIP & DELTA CHECKS)
-            // =================================================
-            for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
-                int rowIndex = comb[eq];
-
-                // If this row slot hasn't changed, skip entirely
-                if (rowIndex == lastUsedRowIndex[eq]) {
-                    continue;
-                }
-
-                float[] sourceRow = matrixOfData[rowIndex];
-
-                // OPTIMIZATION: Skip column 0 entirely! 
-                for (int var = 1; var < numberOfUnknownParameters; var++) {
-                    A[eq][var] = (double) sourceRow[var];
-                }
-
-                // Fill Right Hand Side vector
-                B[eq] = (double) sourceRow[dimensionOfRightvestorInDataFile];
-
-                // Mark this slot as updated
-                lastUsedRowIndex[eq] = rowIndex;
-            }
-
-            // =================================================
-            // SOLVE SYSTEM & DIRECT DEPOSITION
-            // =================================================
-            if (!MatrixUtils.isSingular(A)) {
-                solution = solveTheSystem(A, B);
-
-                // ONE-SHOT VERTICAL DEPOSITION:
-                // Distribute parameter elements straight into their target tracks.
-                // Completely bypasses temporary horizontal float[] array allocations.
-                for (int p = 0; p < numberOfUnknownParameters; p++) {
-                    sortedParameters.get(p).add(solution[p]);
-                }
-            }
-
-            // =================================================
-            // NEXT COMBINATION (Lexicographical Generator)
-            // =================================================
-            int pos = numberOfUnknownParameters - 1;
-
-            while (pos >= 0 && comb[pos] == numberOfSamplesPerDataFile - numberOfUnknownParameters + pos) {
-                pos--;
-            }
-
-            if (pos < 0) {
-                break;
-            }
-
-            comb[pos]++;
-
-            for (int i = pos + 1; i < numberOfUnknownParameters; i++) {
-                comb[i] = comb[i - 1] + 1;
-            }
-        }
-
-        // =====================================================
-        // NATIVE IN-PLACE SORTING BEFORE RETURN
-        // =====================================================
-        // Sort each parameter track cleanly using high-speed native Timsort loops
-        for (int p = 0; p < numberOfUnknownParameters; p++) {
-            java.util.Collections.sort(sortedParameters.get(p));
-        }
-
-        // Returns the fully isolated, fully sorted lists directly
-        return sortedParameters;
     }
 
     public static float[] solveTheSystem(double[][] Adata, double[] bdata) {
