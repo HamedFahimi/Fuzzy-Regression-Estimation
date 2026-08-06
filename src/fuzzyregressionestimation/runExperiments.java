@@ -45,9 +45,9 @@ public class runExperiments {
     private static float[] centralAlphas;
     private static float[] centralBetas;
     private static float[] centralGammas;
-    private static List<List<Float>> alphaSortedParameters;
-    private static List<List<Float>> betaSortedParameters;
-    private static List<List<Float>> gammaSortedParameters;
+    private static List<List<Float>> alphaParameters;
+    private static List<List<Float>> betaParameters;
+    private static List<List<Float>> gammaParameters;
     private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
     static float[][] matrixOfData;
 
@@ -56,6 +56,12 @@ public class runExperiments {
         this.NUMBER_OF_GENERATED_INSTANCES = NUMBER_OF_GENERATED_INSTANCES;
         this.numberOfKnownParameters = numberOfKnownParameters;
         this.numberOfUnknownParameters = numberOfUnknownParameters;
+        alphaParameters = new ArrayList<>(numberOfUnknownParameters);
+        betaParameters = new ArrayList<>(numberOfUnknownParameters);
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            alphaParameters.add(new ArrayList<>());
+            betaParameters.add(new ArrayList<>());
+        }
         if (experimentNumber == 1) {
             matrixOfData = new float[n][numberOfKnownParameters];
             centralAlphas = new float[numberOfUnknownParameters];
@@ -67,6 +73,10 @@ public class runExperiments {
             centralBetas[1] = 0.1f;
             centralGammas[0] = -40.0f;
             centralGammas[1] = 0.2f;
+            gammaParameters = new ArrayList<>(numberOfUnknownParameters);
+            for (int i = 0; i < numberOfUnknownParameters; i++) {
+                gammaParameters.add(new ArrayList<>());
+            }
         } else if (experimentNumber == 2) {
             matrixOfData = new float[n][numberOfKnownParameters - 1];    //I substract 1, because the last two columns in this case are identical
             centralAlphas = new float[numberOfKnownParameters];
@@ -80,18 +90,25 @@ public class runExperiments {
             }
             centralBetas[numberOfUnknownParameters - 1] = 1.0f;
         }
+        for (int i = 0; i < n; i++) {
+            matrixOfData[i][0] = 1.0f;
+        }
     }
 
     public static void main(String[] args) throws IOException {
-        String directory = Config.getDirectory();       
-        Scanner input = new Scanner(System.in);
-        System.out.println("How many samples per data file is desired?");
-        int n = input.nextInt();
-        System.out.println("How many data files would you like to be generated?");
-        int NUMBER_OF_GENERATED_INSTANCES = input.nextInt();
-        System.out.println("Which experiment would you like to launch?");
-        int experimentNumber = input.nextInt();
-         
+        String directory = Config.getDirectory();
+        int n;
+        int NUMBER_OF_GENERATED_INSTANCES;
+        int experimentNumber;
+
+        int[] params = getTheParametersFromInput();
+        n = params[0];
+        NUMBER_OF_GENERATED_INSTANCES = params[1];
+        experimentNumber = params[2];
+        
+//        n = 20;
+//        NUMBER_OF_GENERATED_INSTANCES = 10;
+//        experimentNumber = 1;
         int numberOfKnownParameters = 0;
         int numberOfUnknownParameters = 0;
         if (experimentNumber == 1) {
@@ -102,8 +119,6 @@ public class runExperiments {
             numberOfKnownParameters = 9;
             numberOfUnknownParameters = 6;
         }
-    //    int n = 20;
-    //    int NUMBER_OF_GENERATED_INSTANCES = 10;
         runExperiments A = new runExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters);
         A.deletedEveryExistingExcelFileInTheDirectory(directory);
         A.launchTheEntireExperiment(experimentNumber);
@@ -181,10 +196,10 @@ public class runExperiments {
                 indexOfRightvestorInDataFile = 6;
             }
             establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, indexOfRightvestorInDataFile);
-            establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, indexOfRightvestorInDataFile + 1);
-            if (experimentNumber == 1) {
-                establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, indexOfRightvestorInDataFile + 2);
-            }
+            //    betaParameters = establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, indexOfRightvestorInDataFile + 1);
+            //    if (experimentNumber == 1) {
+            //        gammaParameters = establishTheSystemOfEquationsAndSolve2(experimentNumber, numberOfUnknownParameters, indexOfRightvestorInDataFile + 2);
+            //    }
             findGlobalMinimumOOptimized2(experimentNumber);
         } catch (IOException e) {
         }
@@ -200,7 +215,7 @@ public class runExperiments {
 
             for (Row row : sheet) {
                 // Set first column to 1
-                matrixOfData[rowIndex][0] = 1.0f;
+                //    matrixOfData[rowIndex][0] = 1.0f;
 
                 // Get total columns in Excel row
                 int totalColumns = row.getLastCellNum();
@@ -223,11 +238,10 @@ public class runExperiments {
     }
 
     public void developTheMatrixOfData(String dataName, int experimentNumber) throws FileNotFoundException, IOException {
-        int n = getNumberOfSamples();
         int i;
-        for (i = 0; i < n; i++) {
-            matrixOfData[i][0] = 1.0f;
-        }
+//        for (i = 0; i < n; i++) {
+//            matrixOfData[i][0] = 1.0f;
+//        }
         i = 0;
         int j;
         FileInputStream fis = new FileInputStream(new File(Config.getDirectory() + dataName));
@@ -259,9 +273,9 @@ public class runExperiments {
         // =====================================================
         // This replaces 'allOneOfAlphaOrBetaOrGammaSolutions'. 
         // It creates a row container for each individual parameter group.
-        List<List<Float>> sortedParameters = new ArrayList<>(numberOfUnknownParameters);
+        //    List<List<Float>> solutionsCorrespondingToTheParameters = new ArrayList<>(numberOfUnknownParameters);
         for (int i = 0; i < numberOfUnknownParameters; i++) {
-            sortedParameters.add(new ArrayList<>());
+            //        solutionsCorrespondingToTheParameters.add(new ArrayList<>());
         }
 
         // =====================================================
@@ -280,7 +294,15 @@ public class runExperiments {
         // =====================================================
         double[][] A = new double[numberOfUnknownParameters][numberOfUnknownParameters];
         double[] B = new double[numberOfUnknownParameters];
-        float[] solution;
+        double[] C = new double[numberOfUnknownParameters];
+        double[] D = null;
+        if (experimentNumber == 1) {
+            D = new double[numberOfUnknownParameters];
+        }
+
+        float[] alphaSolution;
+        float[] betaSolution;
+        float[] gammaSolution = null;
 
         // OPTIMIZATION: Set the first column entries to 1.0 EXACTLY ONCE
         for (int eq = 0; eq < numberOfUnknownParameters; eq++) {
@@ -309,6 +331,10 @@ public class runExperiments {
 
                 // Fill Right Hand Side vector
                 B[eq] = (double) sourceRow[dimensionOfRightvestorInDataFile];
+                C[eq] = (double) sourceRow[dimensionOfRightvestorInDataFile + 1];
+                if (experimentNumber == 1) {
+                    D[eq] = (double) sourceRow[dimensionOfRightvestorInDataFile + 2];
+                }
 
                 // Mark this slot as updated
                 lastUsedRowIndex[eq] = rowIndex;
@@ -318,21 +344,40 @@ public class runExperiments {
             // SOLVE SYSTEM & DIRECT DEPOSITION
             // =================================================
             if (!MatrixUtils.isSingular(A)) {
-                solution = solveTheSystem(A, B);
+                alphaSolution = solveTheSystem(A, B);
+                betaSolution = solveTheSystem(A, C);
+                if (experimentNumber == 1) {
+                    gammaSolution = solveTheSystem(A, D);
+                }
 
                 //test
-/*
+                /*
                 float temp = 0.0f;
-                for (int i = 0; i < numberOfUnknownParameters; i++)
-                    temp += A[4][i] * solution[i];
+                for (int i = 0; i < numberOfUnknownParameters; i++) {
+                    temp += A[0][i] * solution[i];
+                }
                 System.out.println(temp);
-                System.out.println(B[4]);
+                System.out.println(B[0]);
+                temp = 0;
+                for (int i = 0; i < numberOfUnknownParameters; i++) {
+                    temp += A[1][i] * solution[i];
+                }
+                System.out.println(temp);
+                System.out.println(B[1]);
+                System.out.println();
                  */
                 // ONE-SHOT VERTICAL DEPOSITION:
                 // Distribute parameter elements straight into their target tracks.
                 // Completely bypasses temporary horizontal float[] array allocations.
                 for (int p = 0; p < numberOfUnknownParameters; p++) {
-                    sortedParameters.get(p).add(solution[p]);
+                    //    solutionsCorrespondingToTheParameters.get(p).add(alphaSolution[p]);
+                    alphaParameters.get(p).add(alphaSolution[p]);
+                    betaParameters.get(p).add(betaSolution[p]);
+                }
+                if (experimentNumber == 1) {
+                    for (int p = 0; p < numberOfUnknownParameters; p++) {
+                        gammaParameters.get(p).add(gammaSolution[p]);
+                    }
                 }
             }
 
@@ -364,32 +409,33 @@ public class runExperiments {
         //    java.util.Collections.sort(sortedParameters.get(p));
         //    }
         //why would we ever sort here?
+/*
         if (experimentNumber == 1) {
             switch (dimensionOfRightvestorInDataFile) {
                 case 2 ->
-                    alphaSortedParameters = sortedParameters;
+                    alphaParameters = solutionsCorrespondingToTheParameters;
                 case 3 ->
-                    betaSortedParameters = sortedParameters;
+                    betaParameters = solutionsCorrespondingToTheParameters;
                 case 4 ->
-                    gammaSortedParameters = sortedParameters;
+                    gammaParameters = solutionsCorrespondingToTheParameters;
                 default -> {
                 }
             }
         } else if (experimentNumber == 2) {
             switch (dimensionOfRightvestorInDataFile) {
                 case 6 ->
-                    alphaSortedParameters = sortedParameters;
+                    alphaParameters = solutionsCorrespondingToTheParameters;
                 case 7 -> {
-                    betaSortedParameters = sortedParameters;
-                    gammaSortedParameters = betaSortedParameters;
+                    betaParameters = solutionsCorrespondingToTheParameters;
+                    gammaParameters = betaParameters;
                 }
                 default -> {
                 }
             }
         }
-
+         */
         // Returns the fully isolated, fully sorted lists directly
-        //    return sortedParameters;
+        //   return solutionsCorrespondingToTheParameters;
     }
 
     public static float[] solveTheSystem(double[][] Adata, double[] bdata) {
@@ -406,10 +452,10 @@ public class runExperiments {
     }
 
     public void findGlobalMinimumOOptimized2(int experimentNumber) {
-        int N = matrixOfData.length;
-        if (N == 0) {
-            return;
-        }
+    //    int N = matrixOfData.length;
+//        if (N == 0) {
+//            return;
+//        }
 
         int M = matrixOfData[0].length;
         int numX;
@@ -418,14 +464,13 @@ public class runExperiments {
         } else {
             numX = M - 2;
         }
-        int h1Max = N / 4 - 1;
-        int h2Start = 3 * N / 4;
+        //    int h1Max = N / 4 - 1;
         //    int minWindowSize = N / 2;
 
         double globalMinO = Double.MAX_VALUE;
         int bestH1, bestH2, bestSolIdx = -1;
 
-        int numSolutions = alphaSortedParameters.get(0).size();
+        int numSolutions = alphaParameters.get(0).size();
 
         float[] currentAlphas = new float[numX];
         float[] currentBetas = new float[numX];
@@ -433,19 +478,19 @@ public class runExperiments {
 
         for (int s = 0; s < numSolutions; s++) {
             for (int j = 0; j < numX; j++) {
-                currentAlphas[j] = alphaSortedParameters.get(j).get(s);
-                currentBetas[j] = betaSortedParameters.get(j).get(s);
-                currentGammas[j] = gammaSortedParameters.get(j).get(s);
+                currentAlphas[j] = alphaParameters.get(j).get(s);
+                currentBetas[j] = betaParameters.get(j).get(s);
+                currentGammas[j] = gammaParameters.get(j).get(s);
             }
 
-            double[] E = new double[N];
+            double[] E = new double[numberOfSamples];
             //        double[] prefixSum = new double[N + 1];
-            double[] prefixSum2 = new double[N];
+            double[] prefixSum2 = new double[numberOfSamples];
 
             //      prefixSum[0] = 0;
 // First, compute E values for all i
             // float[] E = new float[N];
-            for (int i = 0; i < N; i++) {
+            for (int i = 0; i < numberOfSamples; i++) {
                 float sumAlphaX = 0, sumBetaX = 0, sumGammaX = 0;
                 float[] row = matrixOfData[i];
 
@@ -463,9 +508,10 @@ public class runExperiments {
                 }
 
                 if (experimentNumber == 1) {
-                    E[i] = (float) (Math.abs(row[numX] - sumAlphaX)
-                            + 0.5 * Math.abs(row[numX + 1] - sumBetaX)
-                            + 0.5 * Math.abs(row[numX + 2] - sumGammaX));
+                    //    System.out.println(Math.abs(row[numX] - sumAlphaX));
+                    //    System.out.println(0.5 * Math.abs(row[numX + 1] - sumBetaX));
+                    //    System.out.println(0.5 * Math.abs(row[numX + 2] - sumGammaX));
+                    E[i] = (float) (Math.abs(row[numX] - sumAlphaX) + 0.5 * Math.abs(row[numX + 1] - sumBetaX) + 0.5 * Math.abs(row[numX + 2] - sumGammaX));
                 } else {
                     E[i] = (float) (Math.abs(row[numX] - sumAlphaX)
                             + Math.abs(row[numX + 1] - sumBetaX));
@@ -473,8 +519,8 @@ public class runExperiments {
             }
 
 // Sort E and get sorted indices
-            Integer[] sortedIndices = new Integer[N];
-            for (int i = 0; i < N; i++) {
+            Integer[] sortedIndices = new Integer[numberOfSamples];
+            for (int i = 0; i < numberOfSamples; i++) {
                 sortedIndices[i] = i;
             }
             // for (int i = 0; i < N; i++)
@@ -482,33 +528,36 @@ public class runExperiments {
             Arrays.sort(sortedIndices, Comparator.comparingDouble(i -> E[i]));
 
 // Build prefixSum based on SORTED E
-            float[] sortedE = new float[N];
+            float[] sortedE = new float[numberOfSamples];
             //    float[] prefixSum = new float[N + 1];
             //   float[] prefixSum2 = new float[N]; // if you still need this
 
-            for (int idx = 0; idx < N; idx++) {
+            float previousErrorSum = 0.0f;
+            for (int idx = 0; idx < numberOfSamples; idx++) {
                 int originalIndex = sortedIndices[idx];
                 sortedE[idx] = (float) E[originalIndex];
                 //   prefixSum[idx + 1] = prefixSum[idx] + sortedE[idx];
 
-                if (idx == 0) {
-                    prefixSum2[idx] = sortedE[idx];
-                } else {
-                    prefixSum2[idx] = prefixSum2[idx - 1] + sortedE[idx];
-                }
+//                if (idx == 0) {
+//                    prefixSum2[idx] = sortedE[idx];
+//                } else {
+                prefixSum2[idx] = previousErrorSum + sortedE[idx];
+                previousErrorSum += sortedE[idx];
+                //    }
             }
 
 // Now iterate over SORTED indices
-            double totalSumE = prefixSum2[N - 1];
+            double totalSumE = prefixSum2[numberOfSamples - 1];
             if (totalSumE < 1e-12) {
                 continue;
             }
 
 // IMPORTANT: h1 and h2 now refer to positions in the SORTED array
-            for (int h1 = 0; h1 < Math.ceil(N / 4.0) - 1; h1++) {
-                for (int h2 = h2Start; h2 < N; h2++) {
-                    int currentWindowSize = h2 - h1 + 1;
-                    if (currentWindowSize < N / 2.0) {
+            for (int h1 = 0; h1 < Math.ceil(numberOfSamples / 4.0) - 1; h1++) {
+                boolean weNeedToProcessMoreTheCurrentLoop = true;
+                for (int h2 = 3 * numberOfSamples / 4; h2 < numberOfSamples && weNeedToProcessMoreTheCurrentLoop; h2++) {
+                    int currentWindowSize = 2 * (h2 - h1 + 1);
+                    if (currentWindowSize < numberOfSamples) {
                         continue;
                     }
 
@@ -527,6 +576,7 @@ public class runExperiments {
                         bestH1 = h1;        // These are now indices in the SORTED array
                         bestH2 = h2;        // These are now indices in the SORTED array
                         bestSolIdx = s;
+                        weNeedToProcessMoreTheCurrentLoop = false;
                     }
                 }
             }
@@ -544,18 +594,18 @@ public class runExperiments {
                 int pIdx = 0;
                 System.out.println("solution number " + bestSolIdx + " gave the best");
                 for (int j = 0; j < K; j++) {
-                    currentResult[pIdx++] = alphaSortedParameters.get(j).get(bestSolIdx);
+                    currentResult[pIdx++] = alphaParameters.get(j).get(bestSolIdx);
                 }
                 for (int j = 0; j < K; j++) {
-                    currentResult[pIdx++] = betaSortedParameters.get(j).get(bestSolIdx);
+                    currentResult[pIdx++] = betaParameters.get(j).get(bestSolIdx);
                 }
                 for (int j = 0; j < K; j++) {
-                    currentResult[pIdx++] = gammaSortedParameters.get(j).get(bestSolIdx);
+                    currentResult[pIdx++] = gammaParameters.get(j).get(bestSolIdx);
                 }
 
                 // Save row to memory list
                 allFileResults.add(currentResult);
-
+                emptyTheListOfParameters(experimentNumber);
                 // Process file generation on the 10th result load
                 if (allFileResults.size() == NUMBER_OF_GENERATED_INSTANCES) {
 
@@ -645,7 +695,6 @@ public class runExperiments {
 
                     } catch (java.io.IOException e) {
                         System.err.println("Error writing out final dynamic Excel spreadsheet matrix.");
-                        e.printStackTrace();
                     }
                 }
             }
@@ -661,5 +710,35 @@ public class runExperiments {
         int fractPart = (int) fractionalPart;
         fractionalPart = (float) (integerPart) + (fractPart) / (float) prec;
         return (float) fractionalPart;
+    }
+
+    public void emptyTheListOfParameters(int experimentNumber) {
+        alphaParameters.clear();
+        betaParameters.clear();
+        gammaParameters.clear();
+        alphaParameters = new ArrayList<>(numberOfUnknownParameters);
+        betaParameters = new ArrayList<>(numberOfUnknownParameters);
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            alphaParameters.add(new ArrayList<>());
+            betaParameters.add(new ArrayList<>());
+        }
+        if (experimentNumber == 1) {
+            gammaParameters = new ArrayList<>(numberOfUnknownParameters);
+            for (int i = 0; i < numberOfUnknownParameters; i++) {
+                gammaParameters.add(new ArrayList<>());
+            }
+        }
+    }
+
+    public static int[] getTheParametersFromInput() {
+        int[] params = new int[3];
+        Scanner input = new Scanner(System.in);
+        System.out.println("How many samples per data file is desired?");
+        params[0] = input.nextInt();
+        System.out.println("How many data files would you like to be generated?");
+        params[1] = input.nextInt();
+        System.out.println("Which experiment would you like to launch?");
+        params[2] = input.nextInt();
+        return params;
     }
 }
