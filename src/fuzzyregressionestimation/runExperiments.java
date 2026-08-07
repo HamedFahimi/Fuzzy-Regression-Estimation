@@ -99,16 +99,15 @@ public class runExperiments {
         String directory = Config.getDirectory();
         int n;
         int NUMBER_OF_GENERATED_INSTANCES;
-        int experimentNumber;
-
+        int experimentNumber;        
         int[] params = getTheParametersFromInput();
         n = params[0];
         NUMBER_OF_GENERATED_INSTANCES = params[1];
         experimentNumber = params[2];
-        
-//        n = 20;
+         
+//        n = 10;
 //        NUMBER_OF_GENERATED_INSTANCES = 10;
-//        experimentNumber = 1;
+//        experimentNumber = 2;
         int numberOfKnownParameters = 0;
         int numberOfUnknownParameters = 0;
         if (experimentNumber == 1) {
@@ -274,10 +273,9 @@ public class runExperiments {
         // This replaces 'allOneOfAlphaOrBetaOrGammaSolutions'. 
         // It creates a row container for each individual parameter group.
         //    List<List<Float>> solutionsCorrespondingToTheParameters = new ArrayList<>(numberOfUnknownParameters);
-        for (int i = 0; i < numberOfUnknownParameters; i++) {
-            //        solutionsCorrespondingToTheParameters.add(new ArrayList<>());
-        }
-
+        //    for (int i = 0; i < numberOfUnknownParameters; i++) {
+        //        solutionsCorrespondingToTheParameters.add(new ArrayList<>());
+        //    }
         // =====================================================
         // INITIAL COMBINATION & TRACKING CACHE
         // =====================================================
@@ -353,19 +351,25 @@ public class runExperiments {
                 //test
                 /*
                 float temp = 0.0f;
-                for (int i = 0; i < numberOfUnknownParameters; i++) {
-                    temp += A[0][i] * solution[i];
+                for (int j = 0; j < numberOfUnknownParameters; j++) {
+                    for (int i = 0; i < numberOfUnknownParameters; i++) {
+                        temp += A[j][i] * alphaSolution[i];
+                    }
+                    System.out.println(temp);
+                    System.out.println(B[j]);
+                    temp = 0.0f;
                 }
-                System.out.println(temp);
-                System.out.println(B[0]);
-                temp = 0;
-                for (int i = 0; i < numberOfUnknownParameters; i++) {
-                    temp += A[1][i] * solution[i];
-                }
-                System.out.println(temp);
-                System.out.println(B[1]);
                 System.out.println();
-                 */
+                for (int j = 0; j < numberOfUnknownParameters; j++) {
+                    for (int i = 0; i < numberOfUnknownParameters; i++) {
+                        temp += A[j][i] * betaSolution[i];
+                    }
+                    System.out.println(temp);
+                    System.out.println(C[j]);
+                    temp = 0.0f;
+                }
+                System.out.println("---");
+                */
                 // ONE-SHOT VERTICAL DEPOSITION:
                 // Distribute parameter elements straight into their target tracks.
                 // Completely bypasses temporary horizontal float[] array allocations.
@@ -452,7 +456,7 @@ public class runExperiments {
     }
 
     public void findGlobalMinimumOOptimized2(int experimentNumber) {
-    //    int N = matrixOfData.length;
+        //    int N = matrixOfData.length;
 //        if (N == 0) {
 //            return;
 //        }
@@ -480,7 +484,11 @@ public class runExperiments {
             for (int j = 0; j < numX; j++) {
                 currentAlphas[j] = alphaParameters.get(j).get(s);
                 currentBetas[j] = betaParameters.get(j).get(s);
-                currentGammas[j] = gammaParameters.get(j).get(s);
+            }
+            if (experimentNumber == 1) {
+                for (int j = 0; j < numX; j++) {
+                    currentGammas[j] = gammaParameters.get(j).get(s);
+                }
             }
 
             double[] E = new double[numberOfSamples];
@@ -587,10 +595,17 @@ public class runExperiments {
             //  if (bestSolIdx != -1) {
             if (s + 1 == numSolutions) {
                 int K = numX; // Dynamic number of parameters per group
-                int totalParams = 3 * K;
+                int totalParams = 0;
+                if (experimentNumber == 1) {
+                    totalParams = 3 * K;
+                }
+                if (experimentNumber == 2) {
+                    totalParams = 2 * K;
+                }
 
                 // Extract all dynamic winning parameters into one row array
-                float[] currentResult = new float[totalParams];
+                float[] currentResult;
+                currentResult = new float[totalParams];
                 int pIdx = 0;
                 System.out.println("solution number " + bestSolIdx + " gave the best");
                 for (int j = 0; j < K; j++) {
@@ -599,8 +614,10 @@ public class runExperiments {
                 for (int j = 0; j < K; j++) {
                     currentResult[pIdx++] = betaParameters.get(j).get(bestSolIdx);
                 }
-                for (int j = 0; j < K; j++) {
-                    currentResult[pIdx++] = gammaParameters.get(j).get(bestSolIdx);
+                if (experimentNumber == 1) {
+                    for (int j = 0; j < K; j++) {
+                        currentResult[pIdx++] = gammaParameters.get(j).get(bestSolIdx);
+                    }
                 }
 
                 // Save row to memory list
@@ -633,7 +650,6 @@ public class runExperiments {
 
                     // Overwrite old file execution completely
                     try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
-
                         // Row 1: Generate Dynamic CSV Labels
                         StringBuilder sbHeaders = new StringBuilder();
                         for (int j = 0; j < K; j++) {
@@ -641,11 +657,16 @@ public class runExperiments {
                         }
                         for (int j = 0; j < K; j++) {
                             sbHeaders.append("beta").append(j).append(",");
+                            if (experimentNumber == 2 && j < K - 1) {
+                             //   sbHeaders.append(",");
+                            }
                         }
-                        for (int j = 0; j < K; j++) {
-                            sbHeaders.append("gamma").append(j);
-                            if (j < K - 1) {
-                                sbHeaders.append(",");
+                        if (experimentNumber == 1) {
+                            for (int j = 0; j < K; j++) {
+                                sbHeaders.append("gamma").append(j);
+                                if (j < K - 1) {
+                                    sbHeaders.append(",");
+                                }
                             }
                         }
                         pw.println(sbHeaders.toString());
@@ -715,7 +736,9 @@ public class runExperiments {
     public void emptyTheListOfParameters(int experimentNumber) {
         alphaParameters.clear();
         betaParameters.clear();
-        gammaParameters.clear();
+        if (experimentNumber == 1) {
+            gammaParameters.clear();
+        }
         alphaParameters = new ArrayList<>(numberOfUnknownParameters);
         betaParameters = new ArrayList<>(numberOfUnknownParameters);
         for (int i = 0; i < numberOfUnknownParameters; i++) {
