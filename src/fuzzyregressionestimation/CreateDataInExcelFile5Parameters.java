@@ -35,7 +35,7 @@ public class CreateDataInExcelFile5Parameters {
     private static NonCentralT nct_y;
 //    private static NonCentralT nct_l;
 //    private static NonCentralT nct_r;
-    public static final String directoryAsAString = "C:\\Users\\Win10\\Documents\\NetBeansProjects\\fuzzyregressionestimation\\";
+    public static final String directoryAsAString = "C:\\Users\\HAMED FAHIMI\\Documents\\NetBeansProjects\\fuzzyRegressionEstimation\\Fuzzy-Regression-Estimation\\";
 
     public CreateDataInExcelFile5Parameters() {
 
