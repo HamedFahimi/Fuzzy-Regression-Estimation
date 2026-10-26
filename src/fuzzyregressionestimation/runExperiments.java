@@ -224,10 +224,9 @@ public class runExperiments {
                     Cell cell = row.getCell(excelCol);
                     if (cell != null) {
                         // Matrix column = excelCol + 1 (because matrix[0] is the "1" column)
-                        matrixOfData[rowIndex][excelCol + 1] = truncate((float) cell.getNumericCellValue(), 2);
+                        matrixOfData[rowIndex][excelCol] = truncate((float) cell.getNumericCellValue(), 2);
                     }
                 }
-
                 rowIndex++;
                 if (rowIndex >= getNumberOfSamples()) {
                     break;

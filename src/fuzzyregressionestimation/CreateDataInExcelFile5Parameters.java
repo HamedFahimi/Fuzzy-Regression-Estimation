@@ -15,7 +15,7 @@ public class CreateDataInExcelFile5Parameters {
 
     // private static float[] min_X_is;
     // private static float[] max_X_is;
-    final static int numberOfKnownParameters = 5;
+    final static int numberOfKnownParameters = 6;
     final static int numberOfUnknownParameters = 6;
     private static float[] random_xs;
     private static float[] Alpha_is;
@@ -119,15 +119,16 @@ public class CreateDataInExcelFile5Parameters {
                     //    random_xs[2] = Math.abs(100 + random.nextFloat() - 100 + random.nextFloat());
 
                     // }
-                    random_xs[0] = 10 + random.nextFloat() * (20 - 10);
+                    random_xs[0] = 1.0f;
+                    random_xs[1] = 10 + random.nextFloat() * (20 - 10);
                     float w1 = 100 + random.nextFloat() * (101 - 100);
                     float w2 = 100 + random.nextFloat() * (101 - 100);
-                    random_xs[1] = Math.abs(w2 - w1);
-                    random_xs[2] = 30 + 1 * (float) random.nextGaussian();
+                    random_xs[2] = Math.abs(w2 - w1);
+                    random_xs[3] = 30 + 1 * (float) random.nextGaussian();
                     ChiSquaredDistribution chi = new ChiSquaredDistribution(20);
-                    random_xs[3] = (float) chi.sample();
+                    random_xs[4] = (float) chi.sample();
                     BetaDistribution dist = new BetaDistribution(3, 1);
-                    random_xs[4] = (float) dist.sample();
+                    random_xs[5] = (float) dist.sample();
                     HSSFRow row = sheet.createRow((short) i);
                     for (int g = 0; g < numberOfKnownParameters; g++) {
                         row.createCell(columnCounter++).setCellValue(truncate((float) random_xs[g], 2));
@@ -168,8 +169,8 @@ public class CreateDataInExcelFile5Parameters {
     public static double makeRandomComponentY(Random random, int numberOfKnownParameters, float[] unknownParam, float[] knownParam, float desiredMeanOrOutlier) {
         float sum = 0;
         sum += unknownParam[0];
-        for (int i = 1; i <= numberOfKnownParameters; i++) {
-            sum += unknownParam[i] * knownParam[i - 1];
+        for (int i = 0; i < numberOfKnownParameters; i++) {
+            sum += unknownParam[i] * knownParam[i];
         }
         return sum + random.nextGaussian();
     }
@@ -177,8 +178,8 @@ public class CreateDataInExcelFile5Parameters {
     public static double makeRandomComponentL(Random random, int numberOfKnownParameters, float[] unknownParam, float[] knownParam, float desiredMeanOrOutlier) {
         float sum = 0;
         sum += unknownParam[0];
-        for (int i = 1; i <= numberOfKnownParameters; i++) {
-            sum += unknownParam[i] * knownParam[i - 1];
+        for (int i = 0; i < numberOfKnownParameters; i++) {
+            sum += unknownParam[i] * knownParam[i];
         }
         return sum + Math.abs(0.1 * (float) random.nextGaussian());
     }
@@ -188,8 +189,8 @@ public class CreateDataInExcelFile5Parameters {
     {
         float sum = 0;
         sum += unknownParam[0];
-        for (int i = 1; i <= numberOfKnownParameters; i++) {
-            sum += unknownParam[i] * knownParam[i - 1];
+        for (int i = 0; i < numberOfKnownParameters; i++) {
+            sum += unknownParam[i] * knownParam[i];
         }
         return sum + (nct_y.random());
         //        return param_0 + param_1 * random_x1 + param_2 * random_x2 +...(nct_y.random());
@@ -201,8 +202,8 @@ public class CreateDataInExcelFile5Parameters {
         Random random = new Random();
         double sum = 0;
         sum += unknownParam[0];
-        for (int i = 1; i <= numberOfKnownParameters; i++) {
-            sum += unknownParam[i] * knownParam[i - 1];
+        for (int i = 0; i < numberOfKnownParameters; i++) {
+            sum += unknownParam[i] * knownParam[i];
         }
         return sum + Math.abs(0.1 * (float) random.nextGaussian());
         //t.(df , noc)

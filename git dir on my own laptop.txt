@@ -1,0 +1,1 @@
+cd "/c/Users/HAMED FAHIMI/Documents/NetBeansProjects/fuzzyRegressionEstimation/Fuzzy-Regression-Estimation"
