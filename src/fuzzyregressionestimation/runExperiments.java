@@ -133,9 +133,7 @@ public class runExperiments {
 
         if (files != null) {
             for (File file : files) {
-                if (file.delete()) {
-                    System.out.println("Deleted: " + file.getName());
-                } else {
+                if (!file.delete()) {
                     System.out.println("Could not delete: " + file.getName());
                 }
             }
@@ -224,9 +222,10 @@ public class runExperiments {
                     Cell cell = row.getCell(excelCol);
                     if (cell != null) {
                         // Matrix column = excelCol + 1 (because matrix[0] is the "1" column)
-                        matrixOfData[rowIndex][excelCol] = truncate((float) cell.getNumericCellValue(), 2);
+                        matrixOfData[rowIndex][excelCol + 1] = truncate((float) cell.getNumericCellValue(), 2);
                     }
                 }
+
                 rowIndex++;
                 if (rowIndex >= getNumberOfSamples()) {
                     break;
