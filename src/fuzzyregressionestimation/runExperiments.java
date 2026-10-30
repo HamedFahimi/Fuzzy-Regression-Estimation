@@ -644,7 +644,7 @@ public class runExperiments {
                         }
                     }
                     double[] columnSums = new double[totalParams];
-                    double[] columnSumSquaredDeviations = new double[totalParams];
+                //    double[] columnSumSquaredDeviations = new double[totalParams];
 
                     // Overwrite old file execution completely
                     try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
@@ -681,8 +681,8 @@ public class runExperiments {
                                 columnSums[col] += val;
 
                                 // Deviation calculation using unique individual parameter centers
-                                double deviation = val - centralBaselines[col];
-                                columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                            //    double deviation = val - centralBaselines[col];
+                            //    columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
                             }
                             pw.println();
                         }
@@ -699,15 +699,15 @@ public class runExperiments {
                                     : String.format(",%f", columnSums[col] / NUMBER_OF_GENERATED_INSTANCES));
                         }
                         pw.println();
-
+/*
                         // Row 14: Pure numeric Squared Deviations from unique baselines
                         for (int col = 0; col < totalParams; col++) {
                             double msd = columnSumSquaredDeviations[col] / NUMBER_OF_GENERATED_INSTANCES;
                             pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
                         }
                         pw.println();
-
-                        System.out.println("Excel file successfully created fresh with exactly 14 rows.");
+*/
+                //        System.out.println("Excel file successfully created fresh with exactly 14 rows.");
 
                         // Clear the cache for clean resets next time main runs
                         allFileResults.clear();

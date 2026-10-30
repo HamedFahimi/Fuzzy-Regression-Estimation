@@ -19,7 +19,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 
-public class runExperimentsT {
+public class runIterativeExperiments {
 
     private final int numberOfSamples; // = NumberOfRowsOfDataFile
     private final int numberOfUnknownParameters; //i.e. number of Alpha_i's (Beta_is, Gamma_i's)
@@ -52,7 +52,7 @@ public class runExperimentsT {
     private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
     static float[][] matrixOfData;
 
-    public runExperimentsT(int experimentNumber, int n, int NUMBER_OF_GENERATED_INSTANCES, int numberOfKnownParameters, int numberOfUnknownParameters) {
+    public runIterativeExperiments(int experimentNumber, int n, int NUMBER_OF_GENERATED_INSTANCES, int numberOfKnownParameters, int numberOfUnknownParameters) {
         numberOfSamples = n;
         this.NUMBER_OF_GENERATED_INSTANCES = NUMBER_OF_GENERATED_INSTANCES;
         this.numberOfKnownParameters = numberOfKnownParameters;
@@ -123,12 +123,21 @@ public class runExperimentsT {
         File summaryFile = new File("SummaryOfAllIterations.csv");
         File iterationFile = new File("OptimizationResults.csv");
         boolean headerWritten = false;
+        double[] summarySums = null;   // running column totals of the average rows
+        int summaryCount = 0;          // number of average rows collected
 
         // Clean old generated files ONCE, before all iterations
-        new runExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters)
+        new runIterativeExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters)
                 .deletedEveryExistingExcelFileInTheDirectory(directory);
         if (summaryFile.exists()) {
             summaryFile.delete();
+        }
+        // Remove indexed result files left over from a previous run
+        File[] oldIndexed = new File(".").listFiles((dir, name) -> name.matches("OptimizationResults_\\d+\\.csv"));
+        if (oldIndexed != null) {
+            for (File f : oldIndexed) {
+                f.delete();
+            }
         }
 
         for (int it = 1; it <= numberOfIterations; it++) {
@@ -136,10 +145,10 @@ public class runExperimentsT {
                 iterationFile.delete(); // make sure we never read a stale file
             }
             // A fresh object re-initializes all the static state for a clean run
-            runExperiments A = new runExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters);
+            runIterativeExperiments A = new runIterativeExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters);
             A.launchTheEntireExperiment(experimentNumber);
 
-            // Take the last two rows (averages, mean squared deviations) of this iteration's file
+            // Take the last row (the averages) of this iteration's file
             if (!iterationFile.exists()) {
                 System.out.println("Iteration " + it + " produced no result file; skipped.");
                 continue;
@@ -153,12 +162,19 @@ public class runExperimentsT {
                     }
                 }
             }
-            if (lines.size() < 3) {
+            // Keep this iteration's full result file under its own index
+            File indexedFile = new File("OptimizationResults_" + (it - 1) + ".csv");
+            if (indexedFile.exists()) {
+                indexedFile.delete();
+            }
+            if (!iterationFile.renameTo(indexedFile)) {
+                System.out.println("Could not rename the results of iteration " + it);
+            }
+            if (lines.size() < 2) {
                 continue;
             }
             String header = lines.get(0).replaceAll(",+$", "");
-            String avgRow = lines.get(lines.size() - 2).replaceAll(",+$", "");
-            String msdRow = lines.get(lines.size() - 1).replaceAll(",+$", "");
+            String avgRow = lines.get(lines.size() - 1).replaceAll(",+$", "");
 
             try (PrintWriter pw = new PrintWriter(new java.io.FileWriter(summaryFile, true))) {
                 if (!headerWritten) {
@@ -167,7 +183,37 @@ public class runExperimentsT {
                 }
                 pw.println(avgRow);
             }
+
+            // Accumulate this row for the final column averages
+            String[] parts = avgRow.split(",");
+            if (summarySums == null) {
+                summarySums = new double[parts.length];
+            }
+            for (int c = 0; c < parts.length && c < summarySums.length; c++) {
+                summarySums[c] += Double.parseDouble(parts[c].trim());
+            }
+            summaryCount++;
             System.out.println("=== Finished iteration " + it + " of " + numberOfIterations + " ===");
+        }
+
+        // After all rows: one empty row, then the average of each column
+        if (summarySums != null && summaryCount > 0) {
+            try (PrintWriter pw = new PrintWriter(new java.io.FileWriter(summaryFile, true))) {
+                StringBuilder blank = new StringBuilder();
+                for (int c = 0; c < summarySums.length - 1; c++) {
+                    blank.append(",");
+                }
+                pw.println(blank.toString());
+
+                StringBuilder avg = new StringBuilder();
+                for (int c = 0; c < summarySums.length; c++) {
+                    if (c > 0) {
+                        avg.append(",");
+                    }
+                    avg.append(String.format("%f", summarySums[c] / summaryCount));
+                }
+                pw.println(avg.toString());
+            }
         }
     }
 
@@ -692,7 +738,7 @@ public class runExperimentsT {
                         }
                     }
                     double[] columnSums = new double[totalParams];
-                    double[] columnSumSquaredDeviations = new double[totalParams];
+                //    double[] columnSumSquaredDeviations = new double[totalParams];
 
                     // Overwrite old file execution completely
                     try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
@@ -729,8 +775,8 @@ public class runExperimentsT {
                                 columnSums[col] += val;
 
                                 // Deviation calculation using unique individual parameter centers
-                                double deviation = val - centralBaselines[col];
-                                columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                            //    double deviation = val - centralBaselines[col];
+                            //    columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
                             }
                             pw.println();
                         }
@@ -747,15 +793,15 @@ public class runExperimentsT {
                                     : String.format(",%f", columnSums[col] / NUMBER_OF_GENERATED_INSTANCES));
                         }
                         pw.println();
-
+/*
                         // Row 14: Pure numeric Squared Deviations from unique baselines
                         for (int col = 0; col < totalParams; col++) {
                             double msd = columnSumSquaredDeviations[col] / NUMBER_OF_GENERATED_INSTANCES;
                             pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
                         }
                         pw.println();
-
-                        System.out.println("Excel file successfully created fresh with exactly 14 rows.");
+*/
+                //        System.out.println("Excel file successfully created fresh with exactly 14 rows.");
 
                         // Clear the cache for clean resets next time main runs
                         allFileResults.clear();
