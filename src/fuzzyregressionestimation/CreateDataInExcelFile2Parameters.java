@@ -66,7 +66,7 @@ public class CreateDataInExcelFile2Parameters {
 
     public String generateDataOfExperiment1(int dataFileNumber, int N) {
         try {
-           String filenameDir = "D:\\Programming\\Java\\Fuzzy-Regression-Estimation\\"
+           String filenameDir = "C:\\Users\\HAMED FAHIMI\\Documents\\NetBeansProjects\\fuzzyRegressionEstimation\\Fuzzy-Regression-Estimation\\"
                    + "generatedData" + dataFileNumber + ".xls";
             try (
                 HSSFWorkbook workbook = new HSSFWorkbook()) {

@@ -53,7 +53,7 @@ public class runIterativeExperiments {
     // this many randomly chosen combinations are tried instead of all of them.
     // (If the number of possible combinations is smaller, everything is tried exactly as before.)
     // Change this number to trade accuracy for speed and memory.
-    private static final long MAX_COMBINATIONS_TO_TRY = 5_000_000L;
+    private static final long MAX_COMBINATIONS_TO_TRY = 1_000_000L;
     private static final java.util.Random sampler = new java.util.Random();
     static float[][] matrixOfData;
 
@@ -686,7 +686,8 @@ public class runIterativeExperiments {
                         }
                     }
                     double[] columnSums = new double[totalParams];
-                //    double[] columnSumSquaredDeviations = new double[totalParams];
+                    double[] columnSumSquaredDeviations = new double[totalParams];
+                    double[] columnSumdDeviations = new double[totalParams];
 
                     // Overwrite old file execution completely
                     try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
@@ -723,8 +724,9 @@ public class runIterativeExperiments {
                                 columnSums[col] += val;
 
                                 // Deviation calculation using unique individual parameter centers
-                            //    double deviation = val - centralBaselines[col];
-                            //    columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                                double deviation = val - centralBaselines[col];
+                                columnSumSquaredDeviations[col] += Math.pow(deviation, 2);
+                                columnSumdDeviations[col] += deviation;   //bias
                             }
                             pw.println();
                         }
@@ -741,14 +743,19 @@ public class runIterativeExperiments {
                                     : String.format(",%f", columnSums[col] / NUMBER_OF_GENERATED_INSTANCES));
                         }
                         pw.println();
-/*
-                        // Row 14: Pure numeric Squared Deviations from unique baselines
+                        // Row 14: Pure numeric Mean Squared Deviations from unique baselines
                         for (int col = 0; col < totalParams; col++) {
                             double msd = columnSumSquaredDeviations[col] / NUMBER_OF_GENERATED_INSTANCES;
                             pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
                         }
                         pw.println();
-*/
+                        
+                         for (int col = 0; col < totalParams; col++) {
+                            double msd = columnSumdDeviations[col] / NUMBER_OF_GENERATED_INSTANCES;
+                            pw.print(col == 0 ? String.format("%f", msd) : String.format(",%f", msd));
+                        }
+                        pw.println();
+                        
                 //        System.out.println("Excel file successfully created fresh with exactly 14 rows.");
 
                         // Clear the cache for clean resets next time main runs
