@@ -2,7 +2,6 @@ package fuzzyregressionestimation;
 
 import java.io.*;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -50,6 +49,12 @@ public class runIterativeExperiments {
     private static List<List<Float>> betaParameters;
     private static List<List<Float>> gammaParameters;
     private static final java.util.List<float[]> allFileResults = new java.util.ArrayList<>();
+    // EXPERIMENT 2 ONLY: if the number of possible row combinations is larger than this number,
+    // this many randomly chosen combinations are tried instead of all of them.
+    // (If the number of possible combinations is smaller, everything is tried exactly as before.)
+    // Change this number to trade accuracy for speed and memory.
+    private static final long MAX_COMBINATIONS_TO_TRY = 5_000_000L;
+    private static final java.util.Random sampler = new java.util.Random();
     static float[][] matrixOfData;
 
     public runIterativeExperiments(int experimentNumber, int n, int NUMBER_OF_GENERATED_INSTANCES, int numberOfKnownParameters, int numberOfUnknownParameters) {
@@ -98,6 +103,10 @@ public class runIterativeExperiments {
 
     public static void main(String[] args) throws IOException {
         String directory = Config.getDirectory();
+        if (!new File(directory).isDirectory()) {
+            System.err.println("The folder written in directory.txt does not exist: " + directory);
+            return;
+        }
         int n;
         int NUMBER_OF_GENERATED_INSTANCES;
         int experimentNumber;        
@@ -119,102 +128,9 @@ public class runIterativeExperiments {
             numberOfKnownParameters = 9;
             numberOfUnknownParameters = 6;
         }
-        int numberOfIterations = params[3];
-        File summaryFile = new File("SummaryOfAllIterations.csv");
-        File iterationFile = new File("OptimizationResults.csv");
-        boolean headerWritten = false;
-        double[] summarySums = null;   // running column totals of the average rows
-        int summaryCount = 0;          // number of average rows collected
-
-        // Clean old generated files ONCE, before all iterations
-        new runIterativeExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters)
-                .deletedEveryExistingExcelFileInTheDirectory(directory);
-        if (summaryFile.exists()) {
-            summaryFile.delete();
-        }
-        // Remove indexed result files left over from a previous run
-        File[] oldIndexed = new File(".").listFiles((dir, name) -> name.matches("OptimizationResults_\\d+\\.csv"));
-        if (oldIndexed != null) {
-            for (File f : oldIndexed) {
-                f.delete();
-            }
-        }
-
-        for (int it = 1; it <= numberOfIterations; it++) {
-            if (iterationFile.exists()) {
-                iterationFile.delete(); // make sure we never read a stale file
-            }
-            // A fresh object re-initializes all the static state for a clean run
-            runIterativeExperiments A = new runIterativeExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters);
-            A.launchTheEntireExperiment(experimentNumber);
-
-            // Take the last row (the averages) of this iteration's file
-            if (!iterationFile.exists()) {
-                System.out.println("Iteration " + it + " produced no result file; skipped.");
-                continue;
-            }
-            List<String> lines = new ArrayList<>();
-            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(iterationFile))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    if (!line.trim().isEmpty()) {
-                        lines.add(line.trim());
-                    }
-                }
-            }
-            // Keep this iteration's full result file under its own index
-            File indexedFile = new File("OptimizationResults_" + (it - 1) + ".csv");
-            if (indexedFile.exists()) {
-                indexedFile.delete();
-            }
-            if (!iterationFile.renameTo(indexedFile)) {
-                System.out.println("Could not rename the results of iteration " + it);
-            }
-            if (lines.size() < 2) {
-                continue;
-            }
-            String header = lines.get(0).replaceAll(",+$", "");
-            String avgRow = lines.get(lines.size() - 1).replaceAll(",+$", "");
-
-            try (PrintWriter pw = new PrintWriter(new java.io.FileWriter(summaryFile, true))) {
-                if (!headerWritten) {
-                    pw.println(header);
-                    headerWritten = true;
-                }
-                pw.println(avgRow);
-            }
-
-            // Accumulate this row for the final column averages
-            String[] parts = avgRow.split(",");
-            if (summarySums == null) {
-                summarySums = new double[parts.length];
-            }
-            for (int c = 0; c < parts.length && c < summarySums.length; c++) {
-                summarySums[c] += Double.parseDouble(parts[c].trim());
-            }
-            summaryCount++;
-            System.out.println("=== Finished iteration " + it + " of " + numberOfIterations + " ===");
-        }
-
-        // After all rows: one empty row, then the average of each column
-        if (summarySums != null && summaryCount > 0) {
-            try (PrintWriter pw = new PrintWriter(new java.io.FileWriter(summaryFile, true))) {
-                StringBuilder blank = new StringBuilder();
-                for (int c = 0; c < summarySums.length - 1; c++) {
-                    blank.append(",");
-                }
-                pw.println(blank.toString());
-
-                StringBuilder avg = new StringBuilder();
-                for (int c = 0; c < summarySums.length; c++) {
-                    if (c > 0) {
-                        avg.append(",");
-                    }
-                    avg.append(String.format("%f", summarySums[c] / summaryCount));
-                }
-                pw.println(avg.toString());
-            }
-        }
+        runIterativeExperiments A = new runIterativeExperiments(experimentNumber, n, NUMBER_OF_GENERATED_INSTANCES, numberOfKnownParameters, numberOfUnknownParameters);
+        A.deletedEveryExistingExcelFileInTheDirectory(directory);
+        A.launchTheEntireExperiment(experimentNumber);
     }
 
     public void deletedEveryExistingExcelFileInTheDirectory(String directory) {
@@ -293,6 +209,7 @@ public class runIterativeExperiments {
             //    }
             findGlobalMinimumOOptimized2(experimentNumber);
         } catch (IOException e) {
+            System.err.println("Could not read data file " + dataName + " : " + e);
         }
 
     }
@@ -399,7 +316,31 @@ public class runIterativeExperiments {
             A[eq][0] = 1.0;
         }
 
+        // Decide whether to try all combinations or only a random sample of them
+        int nSamples = getNumberOfSamples();
+        double totalCombinations = 1.0;
+        for (int i = 0; i < numberOfUnknownParameters; i++) {
+            totalCombinations = totalCombinations * (nSamples - i) / (i + 1);
+        }
+        boolean sampleRandomly = (experimentNumber == 2) && totalCombinations > MAX_COMBINATIONS_TO_TRY;
+        long combinationsTried = 0;
+        int[] pool = new int[nSamples];
+        for (int i = 0; i < nSamples; i++) {
+            pool[i] = i;
+        }
+
         while (true) {
+
+            // Random sampling: choose numberOfUnknownParameters distinct rows at random
+            if (sampleRandomly) {
+                for (int i = 0; i < numberOfUnknownParameters; i++) {
+                    int j = i + sampler.nextInt(nSamples - i);
+                    int tmp = pool[i];
+                    pool[i] = pool[j];
+                    pool[j] = tmp;
+                    comb[i] = pool[i];
+                }
+            }
 
             // =================================================
             // BUILD A AND B (WITH FIRST COLUMN SKIP & DELTA CHECKS)
@@ -480,6 +421,13 @@ public class runIterativeExperiments {
             // =================================================
             // NEXT COMBINATION (Lexicographical Generator)
             // =================================================
+            if (sampleRandomly) {
+                combinationsTried++;
+                if (combinationsTried >= MAX_COMBINATIONS_TO_TRY) {
+                    break;
+                }
+                continue;
+            }
             int pos = numberOfUnknownParameters - 1;
 
             while (pos >= 0 && comb[pos] == getNumberOfSamples() - numberOfUnknownParameters + pos) {
@@ -846,7 +794,7 @@ public class runIterativeExperiments {
     }
 
     public static int[] getTheParametersFromInput() {
-        int[] params = new int[4];
+        int[] params = new int[3];
         Scanner input = new Scanner(System.in);
         System.out.println("How many samples per data file is desired?");
         params[0] = input.nextInt();
@@ -854,8 +802,6 @@ public class runIterativeExperiments {
         params[1] = input.nextInt();
         System.out.println("Which experiment would you like to launch?");
         params[2] = input.nextInt();
-        System.out.println("How many times should the whole experiment be repeated?");
-        params[3] = input.nextInt();
         return params;
     }
 }
