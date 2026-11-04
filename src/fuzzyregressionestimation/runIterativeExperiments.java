@@ -688,6 +688,7 @@ public class runIterativeExperiments {
                     double[] columnSums = new double[totalParams];
                     double[] columnSumSquaredDeviations = new double[totalParams];
                     double[] columnSumdDeviations = new double[totalParams];
+                    double[] variance = new double[totalParams];
 
                     // Overwrite old file execution completely
                     try (java.io.FileWriter fw = new java.io.FileWriter(file, false); java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
